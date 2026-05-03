@@ -220,9 +220,14 @@ function playEVMBeep() {
 }
 
 function animateVoterSlip(candidate) {
-  if (!vvpatSlip || !vvpatPanel) {
+  if (!vvpatSlip || !vvpatPanel || !candidate) {
     return;
   }
+
+  // Ensure candidate has all required properties
+  const name = String(candidate.name || "Unknown Candidate");
+  const tagline = String(candidate.tagline || "");
+  const symbolPath = String(candidate.symbolPath || "./assets/symbols/clock.svg");
 
   // Update slip content
   const slipSymbol = vvpatSlip.querySelector("#vvpat-slip-symbol");
@@ -230,11 +235,11 @@ function animateVoterSlip(candidate) {
   const slipSymbolName = vvpatSlip.querySelector("#vvpat-slip-symbol-name");
 
   if (slipSymbol) {
-    slipSymbol.src = candidate.symbolPath;
-    slipSymbol.alt = `${candidate.name} - ${candidate.tagline}`;
+    slipSymbol.src = symbolPath;
+    slipSymbol.alt = `${name} - ${tagline}`;
   }
-  if (slipName) slipName.textContent = candidate.name;
-  if (slipSymbolName) slipSymbolName.textContent = `Vote for ${candidate.name}`;
+  if (slipName) slipName.textContent = name;
+  if (slipSymbolName) slipSymbolName.textContent = tagline ? `${tagline} - ${name}` : `Vote for ${name}`;
 
   // Reset inline styles and add classes to trigger animation
   vvpatSlip.style.opacity = "";  // Remove inline opacity to allow CSS to work
