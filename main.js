@@ -11,6 +11,7 @@ function createWindow() {
     height: 1000,
     minWidth: 800,
     minHeight: 600,
+    icon: path.join(__dirname, "assets/symbols/school.svg"),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
@@ -45,6 +46,7 @@ function createAdminWindow() {
     height: 1000,
     minWidth: 900,
     minHeight: 600,
+    icon: path.join(__dirname, "assets/symbols/school.svg"),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
@@ -65,6 +67,11 @@ function createAdminWindow() {
 }
 
 app.on("ready", () => {
+  // Set macOS dock icon
+  if (process.platform === "darwin") {
+    app.dock.setIcon(path.join(__dirname, "assets/symbols/school.svg"));
+  }
+  
   createWindow();
   createMenu();
 });

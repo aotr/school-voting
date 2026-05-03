@@ -175,7 +175,7 @@ function playEVMBeep() {
   const audioContext = new AudioContextClass();
   const now = audioContext.currentTime;
   
-  // Create a series of quick beeps like an EVM machine
+  // Create a series of quick beeps like an EVM machine - 10 second duration
   const beepPattern = [
     { start: 0, duration: 0.12, frequency: 1200 },
     { start: 0.15, duration: 0.12, frequency: 1400 },
@@ -184,25 +184,34 @@ function playEVMBeep() {
 
   activeAudioContext = audioContext;
 
-  beepPattern.forEach((beep) => {
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(beep.frequency, now + beep.start);
+  // Repeat pattern to fill 10 seconds (pattern is ~0.46s, repeat 22 times for 10+ seconds)
+  const repeatCount = 10;
+  const patternDuration = 0.46;
+  
+  for (let i = 0; i < repeatCount; i++) {
+    const timeOffset = now + (i * patternDuration);
     
-    gainNode.gain.setValueAtTime(0, now + beep.start);
-    gainNode.gain.linearRampToValueAtTime(0.15, now + beep.start + 0.02);
-    gainNode.gain.linearRampToValueAtTime(0.13, now + beep.start + beep.duration - 0.02);
-    gainNode.gain.linearRampToValueAtTime(0, now + beep.start + beep.duration);
+    beepPattern.forEach((beep) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    oscillator.start(now + beep.start);
-    oscillator.stop(now + beep.start + beep.duration);
-  });
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(beep.frequency, timeOffset + beep.start);
+      
+      // LOUDER: Increased gain from 0.15 to 0.35
+      gainNode.gain.setValueAtTime(0, timeOffset + beep.start);
+      gainNode.gain.linearRampToValueAtTime(0.35, timeOffset + beep.start + 0.02);
+      gainNode.gain.linearRampToValueAtTime(0.33, timeOffset + beep.start + beep.duration - 0.02);
+      gainNode.gain.linearRampToValueAtTime(0, timeOffset + beep.start + beep.duration);
 
-  const totalDuration = 0.46;
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator.start(timeOffset + beep.start);
+      oscillator.stop(timeOffset + beep.start + beep.duration);
+    });
+  }
+
+  const totalDuration = 10.12; // 10+ seconds
   window.setTimeout(() => {
     audioContext.close().catch(() => {});
     activeOscillator = null;
