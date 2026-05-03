@@ -88,7 +88,7 @@ app.on("activate", () => {
   }
 });
 
-// Menu
+// Menu - Minimal menu with only Admin Panel option
 function createMenu() {
   const template = [
     {
@@ -107,31 +107,6 @@ function createMenu() {
             app.quit();
           },
         },
-      ],
-    },
-    {
-      label: "Edit",
-      submenu: [
-        { role: "undo" },
-        { role: "redo" },
-        { type: "separator" },
-        { role: "cut" },
-        { role: "copy" },
-        { role: "paste" },
-      ],
-    },
-    {
-      label: "View",
-      submenu: [
-        { role: "reload" },
-        { role: "forceReload" },
-        { role: "toggleDevTools" },
-        { type: "separator" },
-        { role: "resetZoom" },
-        { role: "zoomIn" },
-        { role: "zoomOut" },
-        { type: "separator" },
-        { role: "togglefullscreen" },
       ],
     },
   ];
