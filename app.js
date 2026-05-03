@@ -236,7 +236,8 @@ function animateVoterSlip(candidate) {
   if (slipName) slipName.textContent = candidate.name;
   if (slipSymbolName) slipSymbolName.textContent = `Vote for ${candidate.name}`;
 
-  // Add classes to trigger animation
+  // Reset inline styles and add classes to trigger animation
+  vvpatSlip.style.opacity = "";  // Remove inline opacity to allow CSS to work
   vvpatPanel.classList.add("is-printing", "has-slip");
   vvpatPlaceholder.style.display = "none";
   vvpatSlip.classList.remove("is-resting");
