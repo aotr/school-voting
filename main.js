@@ -11,6 +11,7 @@ function createWindow() {
     height: 1000,
     minWidth: 800,
     minHeight: 600,
+    icon: path.join(__dirname, "assets", "app-icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
@@ -45,6 +46,7 @@ function createAdminWindow() {
     height: 1000,
     minWidth: 900,
     minHeight: 600,
+    icon: path.join(__dirname, "assets", "app-icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
@@ -67,6 +69,15 @@ function createAdminWindow() {
 app.on("ready", () => {
   createWindow();
   createMenu();
+  // Set dock icon on macOS
+  if (process.platform === "darwin") {
+    try {
+      app.dock.setIcon(path.join(__dirname, "assets", "app-icon.png"));
+    } catch (err) {
+      // Icon file may not exist yet, continue anyway
+      console.log("Note: App icon not found at assets/app-icon.png");
+    }
+  }
 });
 
 app.on("window-all-closed", () => {
