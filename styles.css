@@ -1,0 +1,912 @@
+:root {
+  --bg-deep: #17304a;
+  --bg-panel: #d9ddd8;
+  --bg-panel-shadow: #9ea6a4;
+  --bg-screen: #eef4ea;
+  --ink-dark: #102336;
+  --ink-soft: #466173;
+  --accent-red: #b4362c;
+  --accent-green: #2b9a5a;
+  --accent-yellow: #f4c64c;
+  --disabled: #9fa7aa;
+  --row-line: rgba(16, 35, 54, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  color: var(--ink-dark);
+  background:
+    radial-gradient(circle at top, rgba(244, 198, 76, 0.22), transparent 28%),
+    linear-gradient(160deg, #12283d 0%, #17304a 40%, #0f2132 100%);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+.machine-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.machine-panel {
+  width: min(1040px, 100%);
+  background: linear-gradient(180deg, var(--bg-panel) 0%, #c8ceca 100%);
+  border: 8px solid #bfc5c0;
+  border-radius: 28px;
+  padding: 28px;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.28),
+    inset 0 0 0 6px var(--bg-panel-shadow);
+}
+
+.voting-panel {
+  width: min(1100px, 100%);
+  height: calc(100vh - 28px);
+  max-height: 980px;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 12px;
+  overflow: hidden;
+  padding: 20px 22px;
+  --row-padding-y: 16px;
+  --row-padding-x: 18px;
+  --symbol-column: 124px;
+  --button-column: 112px;
+  --symbol-size: 78px;
+  --button-size: 76px;
+  --button-ring: -7px;
+  --button-border-width: 4px;
+  --candidate-name-size: 1.55rem;
+  --candidate-tagline-size: 0.9rem;
+  --header-padding-y: 14px;
+  --header-padding-x: 18px;
+  --header-font-size: 0.92rem;
+}
+
+.voting-panel.dense-mode {
+  --row-padding-y: 11px;
+  --row-padding-x: 16px;
+  --symbol-column: 104px;
+  --button-column: 90px;
+  --symbol-size: 62px;
+  --button-size: 60px;
+  --button-ring: -5px;
+  --button-border-width: 3px;
+  --candidate-name-size: 1.22rem;
+  --candidate-tagline-size: 0.8rem;
+  --header-padding-y: 11px;
+  --header-padding-x: 16px;
+  --header-font-size: 0.84rem;
+}
+
+.voting-panel.compact-mode {
+  --row-padding-y: 7px;
+  --row-padding-x: 14px;
+  --symbol-column: 84px;
+  --button-column: 76px;
+  --symbol-size: 48px;
+  --button-size: 48px;
+  --button-ring: -4px;
+  --button-border-width: 2px;
+  --candidate-name-size: 1rem;
+  --candidate-tagline-size: 0.72rem;
+  --header-padding-y: 8px;
+  --header-padding-x: 14px;
+  --header-font-size: 0.76rem;
+}
+
+.voting-panel.split-grid-mode {
+  --row-padding-y: 10px;
+  --row-padding-x: 10px;
+  --symbol-size: 64px;
+  --button-size: 42px;
+  --button-ring: -3px;
+  --button-border-width: 2px;
+  --candidate-name-size: 0.92rem;
+  --candidate-tagline-size: 0.68rem;
+}
+
+.panel-header,
+.panel-footer,
+.list-header,
+.candidate-row {
+  display: grid;
+  gap: 16px;
+}
+
+.panel-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.voting-panel .panel-header,
+.voting-panel .panel-footer {
+  margin: 0;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-family: "Arial Narrow", "Avenir Next Condensed", "Trebuchet MS", sans-serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+h1 {
+  margin: 0;
+  font-family: "Arial Narrow", "Avenir Next Condensed", "Trebuchet MS", sans-serif;
+  font-size: clamp(2rem, 4vw, 3.3rem);
+  line-height: 0.95;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.voting-panel.compact-mode h1 {
+  font-size: clamp(1.45rem, 2.4vw, 2.2rem);
+}
+
+.voting-panel.dense-mode .eyebrow,
+.voting-panel.compact-mode .eyebrow {
+  margin-bottom: 4px;
+}
+
+.status-cluster {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.status-card {
+  min-width: 142px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 2px solid rgba(16, 35, 54, 0.08);
+  text-align: right;
+}
+
+.voting-panel.dense-mode .status-card,
+.voting-panel.compact-mode .status-card {
+  min-width: 120px;
+  padding: 9px 10px;
+}
+
+.voting-panel.compact-mode .status-card {
+  min-width: 106px;
+}
+
+.status-card strong {
+  display: block;
+  font-family: "Arial Narrow", "Avenir Next Condensed", "Trebuchet MS", sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 0.05em;
+}
+
+.status-label {
+  display: block;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+}
+
+.instruction-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(16, 35, 54, 0.07);
+  font-size: 0.95rem;
+}
+
+.voting-panel.dense-mode .instruction-bar {
+  padding: 9px 12px;
+  font-size: 0.84rem;
+  margin-bottom: 0;
+}
+
+.voting-panel.compact-mode .instruction-bar {
+  padding: 7px 10px;
+  font-size: 0.76rem;
+  margin-bottom: 0;
+}
+
+.instruction-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-yellow);
+  box-shadow: 0 0 16px rgba(244, 198, 76, 0.9);
+}
+
+.ballot-screen {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 4px solid #72808b;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.92)),
+    repeating-linear-gradient(
+      180deg,
+      rgba(16, 35, 54, 0.025) 0,
+      rgba(16, 35, 54, 0.025) 32px,
+      transparent 32px,
+      transparent 64px
+    ),
+    var(--bg-screen);
+}
+
+.voting-panel .ballot-screen {
+  min-height: 0;
+}
+
+.list-header,
+.candidate-row {
+  grid-template-columns: var(--symbol-column) minmax(0, 1fr) var(--button-column);
+  align-items: center;
+}
+
+.list-header {
+  padding: var(--header-padding-y) var(--header-padding-x);
+  font-family: "Arial Narrow", "Avenir Next Condensed", "Trebuchet MS", sans-serif;
+  font-size: var(--header-font-size);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: rgba(16, 35, 54, 0.05);
+}
+
+.candidate-list {
+  display: grid;
+  height: 100%;
+}
+
+.voting-panel.split-grid-mode .list-header {
+  display: none;
+}
+
+.voting-panel.split-grid-mode .candidate-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px;
+  align-content: start;
+}
+
+.candidate-row {
+  position: relative;
+  padding: var(--row-padding-y) var(--row-padding-x);
+  border-top: 1px solid var(--row-line);
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.voting-panel.split-grid-mode .candidate-row {
+  grid-template-columns: 72px minmax(0, 1fr) 48px;
+  align-items: center;
+  min-height: 0;
+  padding: var(--row-padding-y) var(--row-padding-x);
+  border: 1px solid rgba(16, 35, 54, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+.candidate-row.is-selected {
+  background: rgba(43, 154, 90, 0.15);
+}
+
+.candidate-row.is-disabled {
+  opacity: 0.64;
+}
+
+.candidate-row.is-selected::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(43, 154, 90, 0.12), transparent);
+  animation: rowFlash 500ms ease-out;
+  pointer-events: none;
+}
+
+.symbol-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.symbol-badge {
+  width: var(--symbol-size);
+  height: var(--symbol-size);
+  padding: clamp(4px, 0.7vw, 10px);
+  border-radius: 22px;
+  background: #f6f8f3;
+  border: 3px solid rgba(16, 35, 54, 0.12);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.75);
+}
+
+.symbol-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.candidate-name {
+  margin: 0;
+  font-family: "Arial Narrow", "Avenir Next Condensed", "Trebuchet MS", sans-serif;
+  font-size: var(--candidate-name-size);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.candidate-tagline {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  font-size: var(--candidate-tagline-size);
+  line-height: 1.1;
+}
+
+.voting-panel.split-grid-mode .candidate-name {
+  letter-spacing: 0.02em;
+  line-height: 0.95;
+}
+
+.voting-panel.split-grid-mode .candidate-tagline {
+  margin-top: 2px;
+  font-size: 0.64rem;
+}
+
+.vote-button {
+  position: relative;
+  justify-self: end;
+  width: var(--button-size);
+  height: var(--button-size);
+  border: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 28%, #ff8d7e, #d74f43 52%, #97251f 100%);
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-family: "Arial Narrow", "Avenir Next Condensed", "Trebuchet MS", sans-serif;
+  font-weight: 700;
+  font-size: clamp(0.72rem, 0.95vw, 0.95rem);
+  cursor: pointer;
+  box-shadow:
+    0 10px 18px rgba(151, 37, 31, 0.34),
+    inset 0 -10px 14px rgba(0, 0, 0, 0.2),
+    inset 0 10px 16px rgba(255, 255, 255, 0.12);
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+
+.vote-button:hover {
+  transform: translateY(-2px);
+}
+
+.vote-button:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.vote-button::before {
+  content: "";
+  position: absolute;
+  inset: var(--button-ring);
+  border-radius: 50%;
+  border: var(--button-border-width) solid rgba(16, 35, 54, 0.16);
+}
+
+.vote-button.is-selected {
+  background:
+    radial-gradient(circle at 30% 28%, #74f0a4, #2b9a5a 52%, #1b6439 100%);
+  box-shadow:
+    0 0 28px rgba(43, 154, 90, 0.55),
+    0 10px 18px rgba(27, 100, 57, 0.28),
+    inset 0 -10px 14px rgba(0, 0, 0, 0.18),
+    inset 0 10px 16px rgba(255, 255, 255, 0.16);
+  animation: confirmPulse 420ms ease-out 2;
+}
+
+.vote-button:disabled {
+  cursor: not-allowed;
+}
+
+.vote-button.is-locked {
+  background:
+    radial-gradient(circle at 30% 28%, #dfe5e7, #a1aaae 52%, #707b80 100%);
+  box-shadow:
+    inset 0 -10px 14px rgba(0, 0, 0, 0.18),
+    inset 0 10px 16px rgba(255, 255, 255, 0.12);
+  filter: grayscale(0.1);
+}
+
+.voting-panel.split-grid-mode .vote-button {
+  font-size: 0.46rem;
+  letter-spacing: 0.05em;
+}
+
+.panel-footer {
+  grid-template-columns: minmax(0, 1fr) minmax(210px, 240px) auto;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.message-box {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #16344a;
+  color: #f8fff4;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.06);
+}
+
+.voting-panel.dense-mode .message-box {
+  min-height: 60px;
+  padding: 12px 14px;
+  font-size: 0.9rem;
+}
+
+.voting-panel.compact-mode .message-box {
+  min-height: 50px;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+}
+
+.voting-panel.split-grid-mode .message-box {
+  min-height: 48px;
+  padding: 10px 12px;
+  font-size: 0.76rem;
+}
+
+.vvpat-panel {
+  padding: 8px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #cfd7d4 0%, #bcc5c2 100%);
+  border: 3px solid rgba(16, 35, 54, 0.24);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.28),
+    0 12px 20px rgba(16, 35, 54, 0.12);
+}
+
+.vvpat-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.vvpat-label,
+.vvpat-status {
+  font-family: "Arial Narrow", "Avenir Next Condensed", "Trebuchet MS", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.vvpat-label {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+.vvpat-status {
+  font-size: 0.7rem;
+  color: var(--ink-dark);
+}
+
+.vvpat-box {
+  position: relative;
+  height: 104px;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 3px solid #697884;
+  background:
+    linear-gradient(180deg, rgba(235, 241, 235, 0.94), rgba(206, 217, 205, 0.98)),
+    repeating-linear-gradient(
+      180deg,
+      rgba(16, 35, 54, 0.02) 0,
+      rgba(16, 35, 54, 0.02) 18px,
+      transparent 18px,
+      transparent 36px
+    );
+  box-shadow: inset 0 12px 18px rgba(255, 255, 255, 0.45);
+}
+
+.vvpat-indicator {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #81919a;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.28);
+}
+
+.vvpat-panel.is-printing .vvpat-indicator {
+  background: var(--accent-green);
+  box-shadow:
+    0 0 16px rgba(43, 154, 90, 0.85),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.32);
+  animation: indicatorBlink 260ms ease-in-out infinite alternate;
+}
+
+.vvpat-slot {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #1f2831, #46525b);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.08);
+}
+
+.vvpat-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px 18px 12px;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.vvpat-slip {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: -84px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 2px solid #ddd4b0;
+  background: linear-gradient(180deg, #fffef8 0%, #f4edd0 100%);
+  box-shadow:
+    0 14px 18px rgba(16, 35, 54, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+  opacity: 0;
+  transform: translateY(0);
+}
+
+.vvpat-panel.has-slip .vvpat-slip {
+  opacity: 1;
+}
+
+.vvpat-slip.is-animating {
+  animation: slipDrop 1200ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.vvpat-slip.is-resting {
+  animation: slipPulse 2s ease-in-out infinite;
+  transform: translateY(64px);
+}
+
+.vvpat-slip-symbol {
+  width: 48px;
+  height: 48px;
+  padding: 4px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 2px solid rgba(16, 35, 54, 0.1);
+}
+
+.vvpat-slip-symbol img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.vvpat-slip-copy {
+  min-width: 0;
+}
+
+.vvpat-slip-title,
+.vvpat-slip-copy strong,
+.vvpat-slip-copy span:last-child {
+  display: block;
+}
+
+.vvpat-slip-title {
+  font-size: 0.58rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.vvpat-slip-copy strong {
+  margin-top: 2px;
+  font-family: "Arial Narrow", "Avenir Next Condensed", "Trebuchet MS", sans-serif;
+  font-size: 0.9rem;
+  line-height: 0.95;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vvpat-slip-copy span:last-child {
+  margin-top: 4px;
+  font-size: 0.66rem;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.message-box.is-success {
+  background: linear-gradient(135deg, #1e6a3f, #2b9a5a);
+}
+
+.message-box.is-reset {
+  background: linear-gradient(135deg, #184566, #2f6f96);
+}
+
+.reset-button {
+  border: 0;
+  border-radius: 16px;
+  padding: 16px 20px;
+  background: var(--ink-dark);
+  color: white;
+  font-family: "Arial Narrow", "Avenir Next Condensed", "Trebuchet MS", sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.voting-panel.dense-mode .reset-button {
+  padding: 12px 16px;
+  font-size: 0.92rem;
+}
+
+.voting-panel.dense-mode .vvpat-panel,
+.voting-panel.compact-mode .vvpat-panel {
+  padding: 7px;
+}
+
+.voting-panel.dense-mode .vvpat-box,
+.voting-panel.compact-mode .vvpat-box,
+.voting-panel.split-grid-mode .vvpat-box {
+  height: 92px;
+}
+
+.voting-panel.dense-mode .vvpat-slip,
+.voting-panel.compact-mode .vvpat-slip,
+.voting-panel.split-grid-mode .vvpat-slip {
+  top: -80px;
+  grid-template-columns: 42px minmax(0, 1fr);
+  padding: 7px 9px;
+}
+
+.voting-panel.dense-mode .vvpat-slip-symbol,
+.voting-panel.compact-mode .vvpat-slip-symbol,
+.voting-panel.split-grid-mode .vvpat-slip-symbol {
+  width: 42px;
+  height: 42px;
+}
+
+.voting-panel.compact-mode .panel-footer,
+.voting-panel.split-grid-mode .panel-footer {
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 210px) auto;
+  gap: 10px;
+}
+
+.voting-panel.compact-mode .vvpat-label,
+.voting-panel.split-grid-mode .vvpat-label,
+.voting-panel.compact-mode .vvpat-status,
+.voting-panel.split-grid-mode .vvpat-status {
+  font-size: 0.62rem;
+}
+
+.voting-panel.compact-mode .vvpat-placeholder,
+.voting-panel.split-grid-mode .vvpat-placeholder {
+  font-size: 0.68rem;
+}
+
+.voting-panel.compact-mode .vvpat-slip.is-resting,
+.voting-panel.split-grid-mode .vvpat-slip.is-resting {
+  transform: translateY(60px);
+}
+
+.voting-panel.compact-mode .reset-button,
+.voting-panel.compact-mode .admin-link {
+  padding: 10px 13px;
+  font-size: 0.82rem;
+  min-width: 94px;
+}
+
+.voting-panel.split-grid-mode .reset-button,
+.voting-panel.split-grid-mode .admin-link {
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  min-width: 88px;
+}
+
+.admin-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 138px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #102336;
+  color: #f8fff4;
+  text-decoration: none;
+  font-family: "Arial Narrow", "Avenir Next Condensed", "Trebuchet MS", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.voting-panel.dense-mode .admin-link {
+  min-width: 112px;
+  padding: 10px 12px;
+}
+
+.voting-panel.split-grid-mode .status-card {
+  min-width: 98px;
+  padding: 8px 9px;
+}
+
+.voting-panel.split-grid-mode .status-card strong {
+  font-size: 1rem;
+}
+
+.voting-panel.split-grid-mode .status-label {
+  font-size: 0.68rem;
+}
+
+.voting-panel.split-grid-mode .instruction-bar {
+  padding: 7px 10px;
+  font-size: 0.75rem;
+}
+
+.confetti-layer {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 18px;
+  border-radius: 999px;
+  opacity: 0.95;
+  animation: confettiDrop 900ms ease-out forwards;
+}
+
+@keyframes slipDrop {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(64px) rotate(-2deg);
+    opacity: 1;
+  }
+}
+
+@keyframes indicatorBlink {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes slipPulse {
+  0%, 100% {
+    box-shadow: 0 8px 12px rgba(16, 35, 54, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+  }
+  50% {
+    box-shadow: 0 8px 20px rgba(43, 154, 90, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+  }
+}
+
+@keyframes confirmPulse {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes rowFlash {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes confettiDrop {
+  0% {
+    transform: translate3d(0, -12px, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(var(--drift, 0), 160px, 0) rotate(320deg);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 860px) {
+  .machine-panel {
+    padding: 22px;
+  }
+
+  .voting-panel {
+    height: auto;
+    max-height: none;
+    gap: 16px;
+  }
+
+  .panel-header,
+  .panel-footer,
+  .list-header,
+  .candidate-row {
+    grid-template-columns: 1fr;
+  }
+
+  .status-cluster {
+    justify-content: flex-start;
+  }
+
+  .list-header {
+    display: none;
+  }
+
+  .voting-panel.split-grid-mode .candidate-list {
+    grid-template-columns: 1fr;
+    padding: 0;
+  }
+
+  .candidate-row {
+    gap: 14px;
+  }
+
+  .vote-button {
+    justify-self: start;
+  }
+
+  .panel-footer {
+    gap: 12px;
+  }
+}

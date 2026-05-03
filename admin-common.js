@@ -1,0 +1,469 @@
+const ADMIN_SESSION_KEY = "school-voting-admin-session";
+const PRESET_SYMBOL_OPTIONS = [
+  { label: "Clock", value: "./assets/symbols/clock.svg" },
+  { label: "Galaxy", value: "./assets/symbols/galaxy.svg" },
+  { label: "Butterfly", value: "./assets/symbols/butterfly.svg" },
+  { label: "Olive Leaf", value: "./assets/symbols/olive-leaf.svg" },
+  { label: "Trophy", value: "./assets/symbols/trophy.svg" },
+  { label: "Tree", value: "./assets/symbols/tree.svg" },
+  { label: "Book", value: "./assets/symbols/book.svg" },
+  { label: "Equality", value: "./assets/symbols/equality.svg" },
+];
+
+function setBoxMessage(element, message, tone) {
+  if (!element) {
+    return;
+  }
+
+  element.textContent = message;
+  element.classList.remove("is-success", "is-reset");
+
+  if (tone === "success") {
+    element.classList.add("is-success");
+  }
+
+  if (tone === "reset") {
+    element.classList.add("is-reset");
+  }
+}
+
+function setAdminSession(isLoggedIn) {
+  if (isLoggedIn) {
+    window.sessionStorage.setItem(ADMIN_SESSION_KEY, "true");
+    return;
+  }
+
+  window.sessionStorage.removeItem(ADMIN_SESSION_KEY);
+}
+
+function hasAdminSession() {
+  return window.sessionStorage.getItem(ADMIN_SESSION_KEY) === "true";
+}
+
+function requireAdminSession() {
+  if (!hasAdminSession()) {
+    window.location.href = "./admin.html";
+    return false;
+  }
+
+  return true;
+}
+
+function attachLogoutHandler() {
+  const logoutButton = document.getElementById("logout-button");
+
+  if (!logoutButton) {
+    return;
+  }
+
+  logoutButton.addEventListener("click", () => {
+    setAdminSession(false);
+    window.location.href = "./admin.html";
+  });
+}
+
+function buildPresetOptions(selectedValue) {
+  return PRESET_SYMBOL_OPTIONS.map((option) => `
+    <option value="${option.value}" ${option.value === selectedValue ? "selected" : ""}>
+      ${option.label}
+    </option>
+  `).join("");
+}
+
+function fillElectionForm(state) {
+  const titleInput = document.getElementById("election-title-input");
+  const yearInput = document.getElementById("election-year-input");
+  const openInput = document.getElementById("voting-open-input");
+
+  if (titleInput) {
+    titleInput.value = state.election.title;
+  }
+
+  if (yearInput) {
+    yearInput.value = state.election.year;
+  }
+
+  if (openInput) {
+    openInput.checked = state.election.votingOpen;
+  }
+}
+
+function renderResults(state, resultsList) {
+  if (!resultsList) {
+    return;
+  }
+
+  const totalVotes = state.votes.length;
+  resultsList.innerHTML = "";
+
+  state.candidates.forEach((candidate) => {
+    const result = document.createElement("div");
+    result.className = "result-item";
+    result.innerHTML = `
+      <strong>${candidate.name}</strong>
+      <span>${candidate.votes} vote(s)</span>
+    `;
+    resultsList.appendChild(result);
+  });
+
+  const total = document.createElement("div");
+  total.className = "result-item";
+  total.innerHTML = `
+    <strong>Total Votes</strong>
+    <span>${totalVotes}</span>
+  `;
+  resultsList.appendChild(total);
+}
+
+function renderWinner(state, winnerPanel) {
+  if (!winnerPanel) {
+    return;
+  }
+
+  const totalVotes = state.votes.length;
+  winnerPanel.innerHTML = "";
+
+  if (!state.candidates.length) {
+    winnerPanel.innerHTML = '<p class="winner-empty">No candidates available yet.</p>';
+    return;
+  }
+
+  const sortedCandidates = [...state.candidates].sort((left, right) => right.votes - left.votes);
+  const topVotes = sortedCandidates[0].votes;
+
+  if (totalVotes === 0 || topVotes === 0) {
+    winnerPanel.innerHTML = `
+      <span class="winner-badge">Waiting</span>
+      <p class="winner-empty">No votes recorded yet. The winner will appear here after voting starts.</p>
+    `;
+    return;
+  }
+
+  const leaders = sortedCandidates.filter((candidate) => candidate.votes === topVotes);
+  const isTie = leaders.length > 1;
+  const leadName = isTie ? leaders.map((candidate) => candidate.name).join(", ") : leaders[0].name;
+  const leadSymbol = isTie ? "Tie" : leaders[0].tagline;
+  const leadMargin = sortedCandidates[0].votes - (sortedCandidates[1]?.votes ?? 0);
+
+  winnerPanel.innerHTML = `
+    <span class="winner-badge">${isTie ? "Tie" : "Current Leader"}</span>
+    <h3 class="winner-name">${leadName}</h3>
+    <p class="winner-symbol">${leadSymbol}</p>
+    <div class="winner-stats">
+      <div class="winner-stat">
+        <span class="winner-stat-label">Votes</span>
+        <span class="winner-stat-value">${topVotes}</span>
+      </div>
+      <div class="winner-stat">
+        <span class="winner-stat-label">${isTie ? "Leaders" : "Lead Margin"}</span>
+        <span class="winner-stat-value">${isTie ? leaders.length : leadMargin}</span>
+      </div>
+    </div>
+    <p class="winner-note ${isTie ? "is-tie" : ""}">
+      ${isTie
+        ? "Multiple candidates are tied for first place right now."
+        : `${leaders[0].name} is currently ahead in the vote count.`}
+    </p>
+  `;
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function initElectionPage() {
+  if (!requireAdminSession()) {
+    return;
+  }
+
+  attachLogoutHandler();
+  const securityMessage = document.getElementById("security-message");
+  const electionForm = document.getElementById("election-form");
+  fillElectionForm(window.VotingStore.loadVotingState());
+
+  electionForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    window.VotingStore.saveElection({
+      title: document.getElementById("election-title-input").value,
+      year: document.getElementById("election-year-input").value,
+      votingOpen: document.getElementById("voting-open-input").checked,
+    });
+
+    setBoxMessage(securityMessage, "Election settings saved.", "success");
+    fillElectionForm(window.VotingStore.loadVotingState());
+  });
+}
+
+function initSecurityPage() {
+  if (!requireAdminSession()) {
+    return;
+  }
+
+  attachLogoutHandler();
+  const passwordForm = document.getElementById("password-form");
+  const securityMessage = document.getElementById("security-message");
+
+  passwordForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const nextPassword = document.getElementById("new-password-input").value.trim();
+
+    if (nextPassword.length < 4) {
+      setBoxMessage(securityMessage, "Password must be at least 4 characters.", "reset");
+      return;
+    }
+
+    window.VotingStore.updateAdminPassword(nextPassword);
+    document.getElementById("new-password-input").value = "";
+    setBoxMessage(securityMessage, "Admin password updated.", "success");
+  });
+}
+
+function renderCandidates(state, candidateForm) {
+  candidateForm.innerHTML = "";
+  candidateForm.classList.toggle("two-column-mode", state.candidates.length >= 6);
+
+  state.candidates.forEach((candidate, index) => {
+    const row = document.createElement("div");
+    row.className = "candidate-card";
+    row.dataset.candidateIndex = index;
+    row.dataset.symbolPath = candidate.symbolPath;
+    const selectedPreset = PRESET_SYMBOL_OPTIONS.some((option) => option.value === candidate.symbolPath)
+      ? candidate.symbolPath
+      : "";
+    const symbolLabel = candidate.tagline || "Symbol";
+
+    row.innerHTML = `
+      <div class="candidate-card-top">
+        <div class="candidate-preview">
+          <img src="${candidate.symbolPath}" alt="${candidate.name || "Candidate"} symbol" data-preview-image>
+        </div>
+        <div class="candidate-meta">
+          <p class="candidate-index">Candidate ${index + 1}</p>
+          <h3 class="candidate-current-name">${candidate.name || "New Candidate"}</h3>
+          <p class="small-note" data-card-note>${symbolLabel}</p>
+        </div>
+      </div>
+      <div class="candidate-fields">
+        <label class="field">
+          <span>Candidate Name</span>
+          <input data-field="name" value="${candidate.name}" placeholder="Candidate Name">
+        </label>
+        <label class="field">
+          <span>Candidate Code</span>
+          <input data-field="id" value="${candidate.id}" placeholder="candidate-code">
+        </label>
+        <label class="field">
+          <span>Symbol Name</span>
+          <input data-field="tagline" value="${candidate.tagline}" placeholder="Clock">
+        </label>
+        <label class="field">
+          <span>Preset Symbol</span>
+          <select data-field="presetSymbol">
+            <option value="">Keep current image</option>
+            ${buildPresetOptions(selectedPreset)}
+          </select>
+        </label>
+        <label class="field">
+          <span>Upload Custom Symbol</span>
+          <input data-field="symbolUpload" type="file" accept="image/*,.svg">
+        </label>
+        <p class="small-note">Uploaded images are stored inside this browser prototype. Preset symbols stay portable by default.</p>
+      </div>
+      <div class="candidate-actions">
+        <button class="reset-button remove-button" type="button" data-remove-index="${index}">Remove</button>
+      </div>
+    `;
+    candidateForm.appendChild(row);
+  });
+}
+
+function collectCandidatesFromForm(candidateForm) {
+  return Array.from(candidateForm.querySelectorAll(".candidate-card")).map((row) => {
+    const presetSymbol = row.querySelector('[data-field="presetSymbol"]').value;
+    const currentSymbolPath = row.dataset.symbolPath || "./assets/symbols/clock.svg";
+
+    return {
+      id: row.querySelector('[data-field="id"]').value,
+      name: row.querySelector('[data-field="name"]').value,
+      tagline: row.querySelector('[data-field="tagline"]').value,
+      symbolPath: presetSymbol || currentSymbolPath,
+    };
+  });
+}
+
+function updateCandidateCardHeader(row) {
+  const nameInput = row.querySelector('[data-field="name"]');
+  const taglineInput = row.querySelector('[data-field="tagline"]');
+  const title = row.querySelector(".candidate-current-name");
+  const note = row.querySelector("[data-card-note]");
+
+  title.textContent = nameInput.value.trim() || "New Candidate";
+  note.textContent = taglineInput.value.trim() || "Symbol";
+}
+
+function initCandidatesPage() {
+  if (!requireAdminSession()) {
+    return;
+  }
+
+  attachLogoutHandler();
+  const candidateForm = document.getElementById("candidate-form");
+  const addCandidateButton = document.getElementById("add-candidate-button");
+  const saveCandidatesButton = document.getElementById("save-candidates-button");
+  const backupMessage = document.getElementById("backup-message");
+
+  function refreshCandidates() {
+    renderCandidates(window.VotingStore.loadVotingState(), candidateForm);
+  }
+
+  refreshCandidates();
+
+  addCandidateButton.addEventListener("click", () => {
+    const state = window.VotingStore.loadVotingState();
+    state.candidates.push({
+      id: `candidate-${state.candidates.length + 1}`,
+      name: "",
+      tagline: "",
+      symbolPath: "./assets/symbols/clock.svg",
+      votes: 0,
+    });
+    renderCandidates(state, candidateForm);
+  });
+
+  candidateForm.addEventListener("input", (event) => {
+    const row = event.target.closest(".candidate-card");
+
+    if (!row) {
+      return;
+    }
+
+    if (event.target.matches('[data-field="name"], [data-field="tagline"]')) {
+      updateCandidateCardHeader(row);
+    }
+  });
+
+  candidateForm.addEventListener("change", async (event) => {
+    const row = event.target.closest(".candidate-card");
+
+    if (!row) {
+      return;
+    }
+
+    if (event.target.matches('[data-field="presetSymbol"]')) {
+      const selectedValue = event.target.value;
+
+      if (selectedValue) {
+        row.dataset.symbolPath = selectedValue;
+        row.querySelector("[data-preview-image]").src = selectedValue;
+      }
+      return;
+    }
+
+    if (event.target.matches('[data-field="symbolUpload"]')) {
+      const file = event.target.files && event.target.files[0];
+
+      if (!file) {
+        return;
+      }
+
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        row.dataset.symbolPath = dataUrl;
+        row.querySelector('[data-field="presetSymbol"]').value = "";
+        row.querySelector("[data-preview-image]").src = dataUrl;
+        setBoxMessage(backupMessage, `Loaded custom symbol for ${row.querySelector('[data-field="name"]').value || "candidate"}.`, "success");
+      } catch (error) {
+        setBoxMessage(backupMessage, "Could not load uploaded image. Please try another file.", "reset");
+      }
+    }
+  });
+
+  candidateForm.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("[data-remove-index]");
+
+    if (!removeButton) {
+      return;
+    }
+
+    const candidates = collectCandidatesFromForm(candidateForm);
+    candidates.splice(Number(removeButton.dataset.removeIndex), 1);
+    const state = window.VotingStore.saveCandidates(candidates);
+    renderCandidates(state, candidateForm);
+    setBoxMessage(backupMessage, "Candidate removed.", "reset");
+  });
+
+  saveCandidatesButton.addEventListener("click", () => {
+    const candidates = collectCandidatesFromForm(candidateForm).filter((candidate) => candidate.name.trim());
+
+    if (!candidates.length) {
+      setBoxMessage(backupMessage, "Add at least one candidate before saving.", "reset");
+      return;
+    }
+
+    window.VotingStore.saveCandidates(candidates);
+    refreshCandidates();
+    setBoxMessage(backupMessage, "Candidates saved successfully.", "success");
+  });
+}
+
+function initResultsPage() {
+  if (!requireAdminSession()) {
+    return;
+  }
+
+  attachLogoutHandler();
+  const state = window.VotingStore.loadVotingState();
+  renderResults(state, document.getElementById("results-list"));
+  renderWinner(state, document.getElementById("winner-panel"));
+}
+
+function initBackupPage() {
+  if (!requireAdminSession()) {
+    return;
+  }
+
+  attachLogoutHandler();
+  const exportButton = document.getElementById("export-button");
+  const resetDemoButton = document.getElementById("reset-demo-button");
+  const backupMessage = document.getElementById("backup-message");
+
+  exportButton.addEventListener("click", () => {
+    const blob = new Blob([window.VotingStore.exportVotingState()], {
+      type: "application/json",
+    });
+    const downloadUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = downloadUrl;
+    anchor.download = "voting_backup.json";
+    anchor.click();
+    URL.revokeObjectURL(downloadUrl);
+    setBoxMessage(backupMessage, "Backup exported as voting_backup.json.", "success");
+  });
+
+  resetDemoButton.addEventListener("click", () => {
+    window.VotingStore.resetVotingState();
+    setBoxMessage(backupMessage, "Prototype data reset to defaults.", "reset");
+  });
+}
+
+window.AdminApp = {
+  PRESET_SYMBOL_OPTIONS,
+  setBoxMessage,
+  setAdminSession,
+  hasAdminSession,
+  requireAdminSession,
+  attachLogoutHandler,
+  initElectionPage,
+  initSecurityPage,
+  initCandidatesPage,
+  initResultsPage,
+  initBackupPage,
+  renderResults,
+  renderWinner,
+};

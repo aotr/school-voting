@@ -1,0 +1,1 @@
+window.AdminApp.initElectionPage();
