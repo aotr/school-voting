@@ -220,7 +220,10 @@ function animateVoterSlip(candidate) {
   const slipName = vvpatSlip.querySelector("#vvpat-slip-name");
   const slipSymbolName = vvpatSlip.querySelector("#vvpat-slip-symbol-name");
 
-  if (slipSymbol) slipSymbol.src = candidate.symbolPath;
+  if (slipSymbol) {
+    slipSymbol.src = candidate.symbolPath;
+    slipSymbol.alt = `${candidate.name} - ${candidate.tagline}`;
+  }
   if (slipName) slipName.textContent = candidate.name;
   if (slipSymbolName) slipSymbolName.textContent = `Vote for ${candidate.name}`;
 
@@ -305,16 +308,24 @@ function resetBallot() {
   setMessage("Ready for the next student. Select a candidate to cast the vote.", "reset");
 }
 
-candidateList.addEventListener("click", (event) => {
+candidateList.addEventListener("click", async (event) => {
   const voteButton = event.target.closest(".vote-button");
-  const state = getState();
+  
+  if (!voteButton || selectedCandidateId) {
+    return;
+  }
 
-  if (!voteButton || selectedCandidateId || !state.election.votingOpen) {
+  // Await the state promise
+  const state = await getState();
+
+  if (!state.election.votingOpen) {
     return;
   }
 
   const selectedId = voteButton.dataset.voteButton;
-  const candidate = window.VotingStore.recordVote(selectedId);
+  
+  // Await the recordVote promise
+  const candidate = await window.VotingStore.recordVote(selectedId);
   const selectedRow = voteButton.closest(".candidate-row");
 
   if (!candidate) {
