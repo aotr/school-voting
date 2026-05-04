@@ -235,25 +235,45 @@ function resetVotingState() {
 }
 
 window.VotingStore = {
-  // Async methods for Electron/IPC support
+  // Async methods for Electron/IPC support - DATABASE FIRST
   async loadVotingState() {
+    // ALWAYS try database first (Electron/IPC)
     if (window.electronAPI) {
       try {
-        return await window.electronAPI.getVotingState();
+        console.log("📊 Loading state from DATABASE via IPC...");
+        const data = await window.electronAPI.getVotingState();
+        console.log("✅ State loaded from DATABASE:", { 
+          candidates: data.candidates?.length, 
+          votes: data.votes?.length,
+          source: "database"
+        });
+        return data;
       } catch (error) {
-        console.error("IPC Error:", error);
-        return loadVotingState();
+        console.error("❌ Database load failed, falling back to localStorage:", error.message);
+        const fallback = loadVotingState();
+        console.log("⚠️ Using fallback from localStorage:", { 
+          candidates: fallback.candidates?.length,
+          source: "localStorage"
+        });
+        return fallback;
       }
     }
+    
+    // Non-Electron fallback (e.g., web browser)
+    console.log("ℹ️ No electronAPI, loading from localStorage...");
     return loadVotingState();
   },
 
   async recordVote(candidateId) {
+    // ALWAYS try database first
     if (window.electronAPI) {
       try {
-        return await window.electronAPI.recordVote(candidateId);
+        console.log(`🗳️ Recording vote for ${candidateId} to DATABASE...`);
+        const result = await window.electronAPI.recordVote(candidateId);
+        console.log("✅ Vote recorded in DATABASE");
+        return result;
       } catch (error) {
-        console.error("IPC Error:", error);
+        console.error("❌ Database vote failed, using localStorage:", error.message);
         return recordVote(candidateId);
       }
     }
@@ -261,12 +281,15 @@ window.VotingStore = {
   },
 
   async resetVotingState() {
+    // ALWAYS try database first
     if (window.electronAPI) {
       try {
+        console.log("🔄 Resetting votes in DATABASE...");
         await window.electronAPI.resetVotes();
+        console.log("✅ Votes reset in DATABASE");
         return { success: true };
       } catch (error) {
-        console.error("IPC Error:", error);
+        console.error("❌ Database reset failed, using localStorage:", error.message);
         return resetVotingState();
       }
     }
@@ -274,11 +297,18 @@ window.VotingStore = {
   },
 
   async getResults() {
+    // ALWAYS try database first
     if (window.electronAPI) {
       try {
-        return await window.electronAPI.getResults();
+        console.log("📈 Loading results from DATABASE...");
+        const results = await window.electronAPI.getResults();
+        console.log("✅ Results loaded from DATABASE:", {
+          candidates: results.candidates?.length,
+          source: "database"
+        });
+        return results;
       } catch (error) {
-        console.error("IPC Error:", error);
+        console.error("❌ Database results failed, using localStorage:", error.message);
         const state = loadVotingState();
         return { candidates: state.candidates, totalVotes: 0 };
       }
@@ -287,18 +317,23 @@ window.VotingStore = {
     return { candidates: state.candidates, totalVotes: 0 };
   },
 
-  // Sync methods for localStorage (backwards compatible)
+  // Candidates persistence - DATABASE FIRST
   async saveCandidates(candidates) {
+    // ALWAYS try database first
     if (window.electronAPI) {
       try {
+        console.log(`💾 Saving ${candidates.length} candidates to DATABASE...`);
         await window.electronAPI.updateCandidates(candidates);
-        console.log("✅ Candidates saved to database via IPC");
+        console.log("✅ Candidates saved to DATABASE");
+        // Also sync to localStorage as backup
+        saveCandidates(candidates);
         return saveCandidates(candidates);
       } catch (error) {
-        console.error("IPC Error saving candidates:", error);
+        console.error("❌ Database save failed, using localStorage only:", error.message);
         return saveCandidates(candidates);
       }
     }
+    console.log("ℹ️ No electronAPI, saving to localStorage only...");
     return saveCandidates(candidates);
   },
 

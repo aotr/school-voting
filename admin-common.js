@@ -440,13 +440,22 @@ function initCandidatesPage() {
 
   async function refreshCandidates() {
     try {
+      console.log("🔄 Refreshing candidates list from database...");
       const state = await window.VotingStore.loadVotingState();
-      console.log("📋 Loading candidates:", state.candidates);
-      console.log("   Total candidates:", state.candidates ? state.candidates.length : 0);
+      
+      if (!state || !state.candidates) {
+        console.error("❌ Invalid state received from database");
+        backupMessage.textContent = "Error: No candidates data from database";
+        return;
+      }
+      
+      console.log("📋 Candidates from DATABASE:");
+      console.log(`   Count: ${state.candidates.length}`);
+      console.log("   List:", state.candidates.map(c => ({ id: c.id, name: c.name, votes: c.votes })));
       renderCandidates(state, candidateForm);
-      console.log("✅ Candidates rendered successfully");
+      console.log("✅ Candidates rendered successfully from DATABASE");
     } catch (error) {
-      console.error("❌ Error loading candidates:", error);
+      console.error("❌ Error loading candidates from database:", error);
       backupMessage.textContent = "Error loading candidates. Check console.";
     }
   }
