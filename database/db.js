@@ -234,6 +234,17 @@ function updateCandidates(candidates) {
       .all(election.id);
     console.log(`📋 Current candidates in DB: ${currentCandidates.length}`);
 
+    // CRITICAL GUARD: Prevent data loss from cascading updates
+    const currentCount = currentCandidates.length;
+    const newCount = candidates.filter(c => (c.name || "").trim()).length; // Count valid candidates
+    const candidateLossThreshold = 2; // Allow up to 2 candidate loss (editing)
+    
+    if (newCount < currentCount - candidateLossThreshold) {
+      const errorMsg = `❌ CRITICAL GUARD: Would lose ${currentCount - newCount} candidates (${currentCount} → ${newCount}). Rejecting update to prevent data loss.`;
+      console.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+
     // Delete existing candidates for this election (PREVENT DUPLICATES)
     const deleteResult = db.prepare("DELETE FROM candidates WHERE election_id = ?").run(election.id);
     console.log(`🗑️ Deleted ${deleteResult.changes} old candidates from database`);
