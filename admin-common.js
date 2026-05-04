@@ -628,6 +628,8 @@ async function initResultsPage() {
         console.log("🛑 Cleared auto-refresh interval on unload");
       }
     });
+  } catch (error) {
+    console.error("❌ Error initializing results page:", error);
   }
 }
 
