@@ -610,7 +610,9 @@ async function initResultsPage() {
     resetAllButton.addEventListener("click", async () => {
       const confirmed = confirm("Are you sure you want to reset ALL votes? This cannot be undone.");
       if (confirmed) {
-        window.VotingStore.resetVotes();
+        console.log("🔄 Resetting all votes...");
+        await window.VotingStore.resetVotingState();
+        console.log("✅ Votes reset successfully");
         votesMessageElement.textContent = "All votes have been reset.";
         votesMessageElement.className = "message-box is-success";
         await refreshResultsDisplay();
@@ -619,6 +621,20 @@ async function initResultsPage() {
         }, 3000);
       }
     });
+
+    // Add manual refresh button handler
+    const refreshButton = document.getElementById("refresh-results-button");
+    if (refreshButton) {
+      refreshButton.addEventListener("click", async () => {
+        console.log("🔄 Manual refresh triggered");
+        await refreshResultsDisplay();
+        votesMessageElement.textContent = "Results refreshed.";
+        votesMessageElement.className = "message-box is-success";
+        setTimeout(() => {
+          votesMessageElement.className = "message-box";
+        }, 2000);
+      });
+    }
 
     // Clean up interval when page is unloaded
     window.addEventListener("beforeunload", () => {
