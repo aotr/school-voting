@@ -225,62 +225,75 @@ function initSecurityPage() {
 }
 
 function renderCandidates(state, candidateForm) {
+  if (!state || !state.candidates || !Array.isArray(state.candidates)) {
+    console.error("❌ Invalid state or candidates array");
+    candidateForm.innerHTML = "<p>Error loading candidates. Please refresh the page.</p>";
+    return;
+  }
+
+  console.log(`🎨 Rendering ${state.candidates.length} candidates`);
   candidateForm.innerHTML = "";
   candidateForm.classList.toggle("two-column-mode", state.candidates.length >= 6);
 
   state.candidates.forEach((candidate, index) => {
-    const row = document.createElement("div");
-    row.className = "candidate-card";
-    row.dataset.candidateIndex = index;
-    row.dataset.symbolPath = candidate.symbolPath;
-    const selectedPreset = PRESET_SYMBOL_OPTIONS.some((option) => option.value === candidate.symbolPath)
-      ? candidate.symbolPath
-      : "";
-    const symbolLabel = candidate.tagline || "Symbol";
+    try {
+      const row = document.createElement("div");
+      row.className = "candidate-card";
+      row.dataset.candidateIndex = index;
+      row.dataset.symbolPath = candidate.symbolPath;
+      const selectedPreset = PRESET_SYMBOL_OPTIONS.some((option) => option.value === candidate.symbolPath)
+        ? candidate.symbolPath
+        : "";
+      const symbolLabel = candidate.tagline || "Symbol";
 
-    row.innerHTML = `
-      <div class="candidate-card-top">
-        <div class="candidate-preview">
-          <img src="${candidate.symbolPath}" alt="${candidate.name || "Candidate"} symbol" data-preview-image>
+      row.innerHTML = `
+        <div class="candidate-card-top">
+          <div class="candidate-preview">
+            <img src="${candidate.symbolPath}" alt="${candidate.name || "Candidate"} symbol" data-preview-image>
+          </div>
+          <div class="candidate-meta">
+            <p class="candidate-index">Candidate ${index + 1}</p>
+            <h3 class="candidate-current-name">${candidate.name || "New Candidate"}</h3>
+            <p class="small-note" data-card-note>${symbolLabel}</p>
+          </div>
         </div>
-        <div class="candidate-meta">
-          <p class="candidate-index">Candidate ${index + 1}</p>
-          <h3 class="candidate-current-name">${candidate.name || "New Candidate"}</h3>
-          <p class="small-note" data-card-note>${symbolLabel}</p>
+        <div class="candidate-fields">
+          <label class="field">
+            <span>Candidate Name</span>
+            <input data-field="name" value="${candidate.name}" placeholder="Candidate Name">
+          </label>
+          <label class="field">
+            <span>Candidate Code</span>
+            <input data-field="id" value="${candidate.id}" placeholder="candidate-code">
+          </label>
+          <label class="field">
+            <span>Symbol Name</span>
+            <input data-field="tagline" value="${candidate.tagline}" placeholder="Clock">
+          </label>
+          <label class="field">
+            <span>Preset Symbol</span>
+            <select data-field="presetSymbol">
+              <option value="">Keep current image</option>
+              ${buildPresetOptions(selectedPreset)}
+            </select>
+          </label>
+          <label class="field">
+            <span>Upload Custom Symbol</span>
+            <input data-field="symbolUpload" type="file" accept="image/*,.svg">
+          </label>
+          <p class="small-note">Uploaded images are stored inside this browser prototype. Preset symbols stay portable by default.</p>
         </div>
-      </div>
-      <div class="candidate-fields">
-        <label class="field">
-          <span>Candidate Name</span>
-          <input data-field="name" value="${candidate.name}" placeholder="Candidate Name">
-        </label>
-        <label class="field">
-          <span>Candidate Code</span>
-          <input data-field="id" value="${candidate.id}" placeholder="candidate-code">
-        </label>
-        <label class="field">
-          <span>Symbol Name</span>
-          <input data-field="tagline" value="${candidate.tagline}" placeholder="Clock">
-        </label>
-        <label class="field">
-          <span>Preset Symbol</span>
-          <select data-field="presetSymbol">
-            <option value="">Keep current image</option>
-            ${buildPresetOptions(selectedPreset)}
-          </select>
-        </label>
-        <label class="field">
-          <span>Upload Custom Symbol</span>
-          <input data-field="symbolUpload" type="file" accept="image/*,.svg">
-        </label>
-        <p class="small-note">Uploaded images are stored inside this browser prototype. Preset symbols stay portable by default.</p>
-      </div>
-      <div class="candidate-actions">
-        <button class="reset-button remove-button" type="button" data-remove-index="${index}">Remove</button>
-      </div>
-    `;
-    candidateForm.appendChild(row);
+        <div class="candidate-actions">
+          <button class="reset-button remove-button" type="button" data-remove-index="${index}">Remove</button>
+        </div>
+      `;
+      candidateForm.appendChild(row);
+    } catch (error) {
+      console.error(`❌ Error rendering candidate ${index}:`, error);
+    }
   });
+  
+  console.log(`✅ Successfully rendered all candidates`);
 }
 
 function collectCandidatesFromForm(candidateForm) {
@@ -318,36 +331,52 @@ function initCandidatesPage() {
   const saveCandidatesButton = document.getElementById("save-candidates-button");
   const backupMessage = document.getElementById("backup-message");
 
+  // Validate all required elements exist
   if (!candidateForm) {
-    console.error("candidate-form element not found!");
+    console.error("❌ candidate-form element not found!");
+    console.error("Available IDs:", Array.from(document.querySelectorAll("[id]")).map(el => el.id));
     return;
   }
 
+  if (!addCandidateButton) {
+    console.error("❌ add-candidate-button not found!");
+    return;
+  }
+
+  if (!saveCandidatesButton) {
+    console.error("❌ save-candidates-button not found!");
+    return;
+  }
+
+  console.log("✅ All required elements found for candidates page");
+
   function refreshCandidates() {
-    const state = window.VotingStore.loadVotingState();
-    console.log("Loading candidates. State:", state);
-    console.log("Candidates count:", state.candidates ? state.candidates.length : 0);
-    renderCandidates(state, candidateForm);
+    try {
+      const state = window.VotingStore.loadVotingState();
+      console.log("📋 Loading candidates:", state.candidates);
+      console.log("   Total candidates:", state.candidates ? state.candidates.length : 0);
+      renderCandidates(state, candidateForm);
+      console.log("✅ Candidates rendered successfully");
+    } catch (error) {
+      console.error("❌ Error loading candidates:", error);
+      backupMessage.textContent = "Error loading candidates. Check console.";
+    }
   }
 
   refreshCandidates();
 
-  if (!addCandidateButton) {
-    console.error("add-candidate-button not found!");
-    return;
-  }
-
   addCandidateButton.addEventListener("click", () => {
+    console.log("➕ Adding new candidate");
     const state = window.VotingStore.loadVotingState();
     state.candidates.push({
       id: `candidate-${state.candidates.length + 1}`,
-      name: "",
-      tagline: "",
+      name: "New Candidate",
+      tagline: "Symbol",
       symbolPath: "./assets/symbols/clock.svg",
       votes: 0,
     });
     window.VotingStore.saveVotingState(state);
-    renderCandidates(state, candidateForm);
+    refreshCandidates();
   });
 
   candidateForm.addEventListener("input", (event) => {
@@ -406,24 +435,38 @@ function initCandidatesPage() {
     }
 
     const candidates = collectCandidatesFromForm(candidateForm);
-    candidates.splice(Number(removeButton.dataset.removeIndex), 1);
-    const state = window.VotingStore.saveCandidates(candidates);
-    renderCandidates(state, candidateForm);
-    setBoxMessage(backupMessage, "Candidate removed.", "reset");
-  });
-
-  saveCandidatesButton.addEventListener("click", () => {
-    const candidates = collectCandidatesFromForm(candidateForm).filter((candidate) => candidate.name.trim());
-
-    if (!candidates.length) {
-      setBoxMessage(backupMessage, "Add at least one candidate before saving.", "reset");
+    const removeIndex = Number(removeButton.dataset.removeIndex);
+    console.log(`🗑️ Removing candidate at index ${removeIndex}`);
+    candidates.splice(removeIndex, 1);
+    
+    if (candidates.length === 0) {
+      setBoxMessage(backupMessage, "You must keep at least one candidate.", "reset");
       return;
     }
 
-    window.VotingStore.saveCandidates(candidates);
+    const state = window.VotingStore.saveCandidates(candidates);
     refreshCandidates();
-    setBoxMessage(backupMessage, "Candidates saved successfully.", "success");
+    setBoxMessage(backupMessage, "Candidate removed.", "reset");
   });
+
+  if (saveCandidatesButton) {
+    saveCandidatesButton.addEventListener("click", () => {
+      console.log("💾 Saving candidates");
+      const candidates = collectCandidatesFromForm(candidateForm).filter((candidate) => candidate.name.trim());
+
+      if (!candidates.length) {
+        setBoxMessage(backupMessage, "Add at least one candidate before saving.", "reset");
+        return;
+      }
+
+      console.log("Saving", candidates.length, "candidates");
+      window.VotingStore.saveCandidates(candidates);
+      refreshCandidates();
+      setBoxMessage(backupMessage, "✅ Candidates saved successfully.", "success");
+    });
+  } else {
+    console.error("❌ Could not attach save button listener - button not found");
+  }
 }
 
 function initResultsPage() {
