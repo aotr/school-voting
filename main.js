@@ -24,6 +24,7 @@ function createWindow() {
     ? "http://localhost:3000"
     : `file://${path.join(__dirname, "index.html")}`;
 
+  // Always load from file - no dev server is running
   mainWindow.loadFile(path.join(__dirname, "index.html"));
 
   if (isDev) {

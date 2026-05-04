@@ -1,3 +1,13 @@
+// Global error handlers for better debugging
+window.addEventListener("unhandledrejection", (event) => {
+  console.error("❌ Unhandled promise rejection:", event.reason);
+  event.preventDefault(); // Prevent app crash
+});
+
+window.addEventListener("error", (event) => {
+  console.error("❌ Uncaught error:", event.error);
+});
+
 const VOTING_STORAGE_KEY = "school-voting-system-state";
 const CURRENT_SEED_VERSION = 2;
 

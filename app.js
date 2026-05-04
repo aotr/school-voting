@@ -358,7 +358,27 @@ candidateList.addEventListener("click", async (event) => {
 resetButton.addEventListener("click", resetBallot);
 
 // Initialize app
-renderCandidates();
-updateClock();
-window.addEventListener("resize", () => applyDensityMode(lastRenderedCandidateCount));
-window.setInterval(updateClock, 1000);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", async () => {
+    console.log("✅ DOM ready, initializing voting app");
+    try {
+      await renderCandidates();
+      updateClock();
+      window.addEventListener("resize", () => applyDensityMode(lastRenderedCandidateCount));
+      window.setInterval(updateClock, 1000);
+    } catch (error) {
+      console.error("❌ Error initializing app:", error);
+      setMessage("Error loading voting interface. Please refresh.", "reset");
+    }
+  });
+} else {
+  console.log("✅ DOM already loaded, initializing voting app");
+  renderCandidates().then(() => {
+    updateClock();
+    window.addEventListener("resize", () => applyDensityMode(lastRenderedCandidateCount));
+    window.setInterval(updateClock, 1000);
+  }).catch(error => {
+    console.error("❌ Error initializing app:", error);
+    setMessage("Error loading voting interface. Please refresh.", "reset");
+  });
+}

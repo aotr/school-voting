@@ -596,7 +596,15 @@ async function initResultsPage() {
 
     // Auto-refresh every 2 seconds to show new votes in real-time
     console.log("⏰ Starting auto-refresh (2 second interval)");
+    
+    // Store interval ID globally to prevent multiple intervals
+    if (window.__resultsRefreshInterval) {
+      clearInterval(window.__resultsRefreshInterval);
+      console.log("🛑 Cleared previous refresh interval");
+    }
+    
     const refreshInterval = setInterval(refreshResultsDisplay, 2000);
+    window.__resultsRefreshInterval = refreshInterval;
 
     // Reset all votes handler
     resetAllButton.addEventListener("click", async () => {
@@ -614,5 +622,9 @@ async function initResultsPage() {
 
     // Clean up interval when page is unloaded
     window.addEventListener("beforeunload", () => {
-      clearInterval(refreshInterval);
-      console.log("🛑 Cleared auto-refresh interval");
+      if (window.__resultsRefreshInterval) {
+        clearInterval(window.__resultsRefreshInterval);
+        window.__resultsRefreshInterval = null;
+        console.log("🛑 Cleared auto-refresh interval on unload");
+      }
+    });
