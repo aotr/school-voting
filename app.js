@@ -17,9 +17,23 @@ const vvpatSlip = document.getElementById("vvpat-slip");
 const vvpatStatus = document.getElementById("vvpat-status");
 const vvpatPlaceholder = document.getElementById("vvpat-placeholder");
 
-function getState() {
-  // This now returns a promise when using Electron IPC
-  return window.VotingStore.loadVotingState();
+async function getState() {
+  // Load from DATABASE via Electron IPC
+  // This method prioritizes database over localStorage
+  console.log("🔄 getState() - Loading from DATABASE via Electron IPC...");
+  try {
+    const state = await window.VotingStore.loadVotingState();
+    console.log("✅ getState() - Loaded from DATABASE:", {
+      candidatesCount: state?.candidates?.length,
+      votesCount: state?.votes?.length,
+      electionTitle: state?.election?.title,
+      source: "Electron IPC → Database"
+    });
+    return state;
+  } catch (error) {
+    console.error("❌ getState() - Failed to load from database:", error);
+    throw error;
+  }
 }
 
 function applyDensityMode(candidateCount) {
@@ -45,7 +59,17 @@ function renderElectionMeta(state) {
 }
 
 async function renderCandidates() {
+  console.log("🎨 Rendering candidates from DATABASE...");
   const state = await getState();
+  
+  if (!state || !state.candidates) {
+    console.error("❌ No candidates loaded from database");
+    return;
+  }
+  
+  console.log(`📋 Rendering ${state.candidates.length} candidates from DATABASE:`, 
+    state.candidates.map(c => ({ id: c.id, name: c.name })));
+  
   candidateList.innerHTML = "";
   lastRenderedCandidateCount = state.candidates.length;
   applyDensityMode(lastRenderedCandidateCount);
@@ -330,7 +354,7 @@ candidateList.addEventListener("click", async (event) => {
     return;
   }
 
-  // Await the state promise
+  // Await the state promise - loads from DATABASE via IPC
   const state = await getState();
 
   if (!state.election.votingOpen) {
@@ -338,16 +362,19 @@ candidateList.addEventListener("click", async (event) => {
   }
 
   const selectedId = voteButton.dataset.voteButton;
+  console.log(`🗳️ Recording vote for candidate ${selectedId} to DATABASE...`);
   
-  // Await the recordVote promise
+  // Record vote to DATABASE via IPC
   const candidate = await window.VotingStore.recordVote(selectedId);
   const selectedRow = voteButton.closest(".candidate-row");
 
   if (!candidate) {
+    console.error("❌ Vote recording failed");
     setMessage("Unable to record vote. Please check admin settings.", "reset");
     return;
   }
 
+  console.log(`✅ Vote recorded successfully to DATABASE for ${candidate.name}`);
   playEVMBeep();
   lockBallot(selectedId);
   launchConfetti(selectedRow);
@@ -361,8 +388,10 @@ resetButton.addEventListener("click", resetBallot);
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", async () => {
     console.log("✅ DOM ready, initializing voting app");
+    console.log("📊 Loading candidates from DATABASE via Electron IPC...");
     try {
       await renderCandidates();
+      console.log("✅ Voting app initialized successfully with DATABASE data");
       updateClock();
       window.addEventListener("resize", () => applyDensityMode(lastRenderedCandidateCount));
       window.setInterval(updateClock, 1000);
@@ -373,7 +402,9 @@ if (document.readyState === "loading") {
   });
 } else {
   console.log("✅ DOM already loaded, initializing voting app");
+  console.log("📊 Loading candidates from DATABASE via Electron IPC...");
   renderCandidates().then(() => {
+    console.log("✅ Voting app initialized successfully with DATABASE data");
     updateClock();
     window.addEventListener("resize", () => applyDensityMode(lastRenderedCandidateCount));
     window.setInterval(updateClock, 1000);
