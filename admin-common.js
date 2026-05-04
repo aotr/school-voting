@@ -176,7 +176,7 @@ function readFileAsDataUrl(file) {
   });
 }
 
-function initElectionPage() {
+async function initElectionPage() {
   if (!requireAdminSession()) {
     return;
   }
@@ -184,9 +184,9 @@ function initElectionPage() {
   attachLogoutHandler();
   const securityMessage = document.getElementById("security-message");
   const electionForm = document.getElementById("election-form");
-  fillElectionForm(window.VotingStore.loadVotingState());
+  fillElectionForm(await window.VotingStore.loadVotingState());
 
-  electionForm.addEventListener("submit", (event) => {
+  electionForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     window.VotingStore.saveElection({
@@ -196,7 +196,7 @@ function initElectionPage() {
     });
 
     setBoxMessage(securityMessage, "Election settings saved.", "success");
-    fillElectionForm(window.VotingStore.loadVotingState());
+    fillElectionForm(await window.VotingStore.loadVotingState());
   });
 }
 
@@ -350,9 +350,9 @@ function initCandidatesPage() {
 
   console.log("✅ All required elements found for candidates page");
 
-  function refreshCandidates() {
+  async function refreshCandidates() {
     try {
-      const state = window.VotingStore.loadVotingState();
+      const state = await window.VotingStore.loadVotingState();
       console.log("📋 Loading candidates:", state.candidates);
       console.log("   Total candidates:", state.candidates ? state.candidates.length : 0);
       renderCandidates(state, candidateForm);
@@ -365,9 +365,9 @@ function initCandidatesPage() {
 
   refreshCandidates();
 
-  addCandidateButton.addEventListener("click", () => {
+  addCandidateButton.addEventListener("click", async () => {
     console.log("➕ Adding new candidate");
-    const state = window.VotingStore.loadVotingState();
+    const state = await window.VotingStore.loadVotingState();
     state.candidates.push({
       id: `candidate-${state.candidates.length + 1}`,
       name: "New Candidate",
@@ -376,7 +376,7 @@ function initCandidatesPage() {
       votes: 0,
     });
     window.VotingStore.saveVotingState(state);
-    refreshCandidates();
+    await refreshCandidates();
   });
 
   candidateForm.addEventListener("input", (event) => {
@@ -427,7 +427,7 @@ function initCandidatesPage() {
     }
   });
 
-  candidateForm.addEventListener("click", (event) => {
+  candidateForm.addEventListener("click", async (event) => {
     const removeButton = event.target.closest("[data-remove-index]");
 
     if (!removeButton) {
@@ -445,12 +445,12 @@ function initCandidatesPage() {
     }
 
     const state = window.VotingStore.saveCandidates(candidates);
-    refreshCandidates();
+    await refreshCandidates();
     setBoxMessage(backupMessage, "Candidate removed.", "reset");
   });
 
   if (saveCandidatesButton) {
-    saveCandidatesButton.addEventListener("click", () => {
+    saveCandidatesButton.addEventListener("click", async () => {
       console.log("💾 Saving candidates");
       const candidates = collectCandidatesFromForm(candidateForm).filter((candidate) => candidate.name.trim());
 
@@ -461,7 +461,7 @@ function initCandidatesPage() {
 
       console.log("Saving", candidates.length, "candidates");
       window.VotingStore.saveCandidates(candidates);
-      refreshCandidates();
+      await refreshCandidates();
       setBoxMessage(backupMessage, "✅ Candidates saved successfully.", "success");
     });
   } else {
@@ -469,20 +469,20 @@ function initCandidatesPage() {
   }
 }
 
-function initResultsPage() {
+async function initResultsPage() {
   if (!requireAdminSession()) {
     return;
   }
 
   attachLogoutHandler();
-  const state = window.VotingStore.loadVotingState();
+  const state = await window.VotingStore.loadVotingState();
   const votesHistoryElement = document.getElementById("votes-history");
   const votesMessageElement = document.getElementById("votes-message");
   const resetAllButton = document.getElementById("reset-all-votes-button");
 
   // Render voting history
-  function renderVotingHistory() {
-    const updatedState = window.VotingStore.loadVotingState();
+  async function renderVotingHistory() {
+    const updatedState = await window.VotingStore.loadVotingState();
     votesHistoryElement.innerHTML = "";
 
     if (!updatedState.votes || updatedState.votes.length === 0) {
@@ -512,18 +512,18 @@ function initResultsPage() {
 
   renderResults(state, document.getElementById("results-list"));
   renderWinner(state, document.getElementById("winner-panel"));
-  renderVotingHistory();
+  await renderVotingHistory();
 
   // Reset all votes handler
-  resetAllButton.addEventListener("click", () => {
+  resetAllButton.addEventListener("click", async () => {
     const confirmed = confirm("Are you sure you want to reset ALL votes? This cannot be undone.");
     if (confirmed) {
       window.VotingStore.resetVotes();
       votesMessageElement.textContent = "All votes have been reset.";
       votesMessageElement.className = "message-box is-success";
-      renderResults(window.VotingStore.loadVotingState(), document.getElementById("results-list"));
-      renderWinner(window.VotingStore.loadVotingState(), document.getElementById("winner-panel"));
-      renderVotingHistory();
+      renderResults(await window.VotingStore.loadVotingState(), document.getElementById("results-list"));
+      renderWinner(await window.VotingStore.loadVotingState(), document.getElementById("winner-panel"));
+      await renderVotingHistory();
       setTimeout(() => {
         votesMessageElement.className = "message-box";
       }, 3000);
