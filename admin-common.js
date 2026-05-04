@@ -628,3 +628,26 @@ async function initResultsPage() {
         console.log("🛑 Cleared auto-refresh interval on unload");
       }
     });
+  }
+}
+
+// Export all admin functions to window.AdminApp for use in admin pages
+window.AdminApp = {
+  setBoxMessage,
+  setAdminSession,
+  hasAdminSession,
+  requireAdminSession,
+  attachLogoutHandler,
+  buildPresetOptions,
+  fillElectionForm,
+  renderResults,
+  renderWinner,
+  readFileAsDataUrl,
+  initElectionPage,
+  initSecurityPage,
+  renderCandidates,
+  collectCandidatesFromForm,
+  updateCandidateCardHeader,
+  initCandidatesPage,
+  initResultsPage,
+};
