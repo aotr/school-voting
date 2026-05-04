@@ -89,8 +89,28 @@ function fillElectionForm(state) {
 }
 
 function renderResults(state, resultsList) {
+  console.log("🎯 renderResults called with state:", state, "resultsList:", resultsList);
+  
   if (!resultsList) {
+    console.error("❌ renderResults: resultsList element not found");
     return;
+  }
+
+  if (!state) {
+    console.error("❌ renderResults: state is null/undefined", state);
+    resultsList.innerHTML = '<p class="support-text">Error: No state data</p>';
+    return;
+  }
+
+  if (!state.candidates) {
+    console.error("❌ renderResults: state.candidates is missing", state);
+    resultsList.innerHTML = '<p class="support-text">Error: No candidates data</p>';
+    return;
+  }
+
+  if (!Array.isArray(state.votes)) {
+    console.warn("⚠️ renderResults: state.votes is not an array, treating as empty", state.votes);
+    state.votes = [];
   }
 
   const totalVotes = state.votes.length;
@@ -101,7 +121,7 @@ function renderResults(state, resultsList) {
     result.className = "result-item";
     result.innerHTML = `
       <strong>${candidate.name}</strong>
-      <span>${candidate.votes} vote(s)</span>
+      <span>${candidate.votes || 0} vote(s)</span>
     `;
     resultsList.appendChild(result);
   });
@@ -113,14 +133,24 @@ function renderResults(state, resultsList) {
     <span>${totalVotes}</span>
   `;
   resultsList.appendChild(total);
+  console.log("✅ Results rendered successfully");
 }
 
 function renderWinner(state, winnerPanel) {
+  console.log("👑 renderWinner called with state:", state, "winnerPanel:", winnerPanel);
+  
   if (!winnerPanel) {
+    console.error("❌ renderWinner: winnerPanel element not found");
     return;
   }
 
-  const totalVotes = state.votes.length;
+  if (!state || !state.candidates) {
+    console.error("❌ renderWinner: state or candidates missing", state);
+    winnerPanel.innerHTML = '<p class="winner-empty">Error loading data</p>';
+    return;
+  }
+
+  const totalVotes = (state.votes || []).length;
   winnerPanel.innerHTML = "";
 
   if (!state.candidates.length) {
@@ -136,6 +166,7 @@ function renderWinner(state, winnerPanel) {
       <span class="winner-badge">Waiting</span>
       <p class="winner-empty">No votes recorded yet. The winner will appear here after voting starts.</p>
     `;
+    console.log("ℹ️ No votes yet");
     return;
   }
 
@@ -165,6 +196,7 @@ function renderWinner(state, winnerPanel) {
         : `${leaders[0].name} is currently ahead in the vote count.`}
     </p>
   `;
+  console.log("✅ Winner rendered successfully, leader:", leadName);
 }
 
 function readFileAsDataUrl(file) {
@@ -181,23 +213,37 @@ async function initElectionPage() {
     return;
   }
 
-  attachLogoutHandler();
-  const securityMessage = document.getElementById("security-message");
-  const electionForm = document.getElementById("election-form");
-  fillElectionForm(await window.VotingStore.loadVotingState());
-
-  electionForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    window.VotingStore.saveElection({
-      title: document.getElementById("election-title-input").value,
-      year: document.getElementById("election-year-input").value,
-      votingOpen: document.getElementById("voting-open-input").checked,
-    });
-
-    setBoxMessage(securityMessage, "Election settings saved.", "success");
+  try {
+    attachLogoutHandler();
+    const securityMessage = document.getElementById("security-message");
+    const electionForm = document.getElementById("election-form");
+    
+    if (!electionForm) {
+      console.error("❌ Election form element not found");
+      return;
+    }
+    
     fillElectionForm(await window.VotingStore.loadVotingState());
-  });
+
+    electionForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      window.VotingStore.saveElection({
+        title: document.getElementById("election-title-input").value,
+        year: document.getElementById("election-year-input").value,
+        votingOpen: document.getElementById("voting-open-input").checked,
+      });
+
+      setBoxMessage(securityMessage, "Election settings saved.", "success");
+      fillElectionForm(await window.VotingStore.loadVotingState());
+    });
+  } catch (error) {
+    console.error("❌ Error initializing election page:", error);
+    const securityMessage = document.getElementById("security-message");
+    if (securityMessage) {
+      setBoxMessage(securityMessage, "Error loading election settings: " + error.message, "reset");
+    }
+  }
 }
 
 function initSecurityPage() {
@@ -475,20 +521,42 @@ async function initResultsPage() {
   }
 
   attachLogoutHandler();
-  const state = await window.VotingStore.loadVotingState();
-  const votesHistoryElement = document.getElementById("votes-history");
-  const votesMessageElement = document.getElementById("votes-message");
-  const resetAllButton = document.getElementById("reset-all-votes-button");
+  
+  try {
+    const state = await window.VotingStore.loadVotingState();
+    console.log("📊 Results page loaded, state:", state);
+    
+    const votesHistoryElement = document.getElementById("votes-history");
+    const votesMessageElement = document.getElementById("votes-message");
+    const resetAllButton = document.getElementById("reset-all-votes-button");
+    const resultsList = document.getElementById("results-list");
+    const winnerPanel = document.getElementById("winner-panel");
 
-  // Render voting history
-  async function renderVotingHistory() {
-    const updatedState = await window.VotingStore.loadVotingState();
-    votesHistoryElement.innerHTML = "";
-
-    if (!updatedState.votes || updatedState.votes.length === 0) {
-      votesHistoryElement.innerHTML = "<p class='support-text'>No votes cast yet.</p>";
+    if (!state) {
+      console.error("❌ Results page: state is null/undefined");
+      if (votesMessageElement) {
+        votesMessageElement.textContent = "Error: Could not load voting data";
+        votesMessageElement.className = "message-box is-reset";
+      }
       return;
     }
+
+    console.log("✅ State loaded:", {
+      candidatesCount: state.candidates?.length || 0,
+      votesCount: state.votes?.length || 0,
+      candidates: state.candidates
+    });
+
+    // Render voting history
+    async function renderVotingHistory() {
+      const updatedState = await window.VotingStore.loadVotingState();
+      console.log("🔄 Rendering voting history, votes:", updatedState.votes);
+      votesHistoryElement.innerHTML = "";
+
+      if (!updatedState.votes || updatedState.votes.length === 0) {
+        votesHistoryElement.innerHTML = "<p class='support-text'>No votes cast yet.</p>";
+        return;
+      }
 
     const votesList = document.createElement("ul");
     votesList.className = "votes-history-list";
@@ -529,6 +597,14 @@ async function initResultsPage() {
       }, 3000);
     }
   });
+  } catch (error) {
+    console.error("❌ Error initializing results page:", error);
+    const votesMessageElement = document.getElementById("votes-message");
+    if (votesMessageElement) {
+      votesMessageElement.textContent = "Error loading results: " + error.message;
+      votesMessageElement.className = "message-box is-reset";
+    }
+  }
 }
 
 function initBackupPage() {
