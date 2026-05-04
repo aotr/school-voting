@@ -288,7 +288,20 @@ window.VotingStore = {
   },
 
   // Sync methods for localStorage (backwards compatible)
-  saveCandidates,
+  async saveCandidates(candidates) {
+    if (window.electronAPI) {
+      try {
+        await window.electronAPI.updateCandidates(candidates);
+        console.log("✅ Candidates saved to database via IPC");
+        return saveCandidates(candidates);
+      } catch (error) {
+        console.error("IPC Error saving candidates:", error);
+        return saveCandidates(candidates);
+      }
+    }
+    return saveCandidates(candidates);
+  },
+
   saveElection,
   updateAdminPassword,
   verifyAdminPassword,

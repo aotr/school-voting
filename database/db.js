@@ -209,6 +209,46 @@ function adminQuery(query, params = []) {
   }
 }
 
+// Update candidates (admin function)
+function updateCandidates(candidates) {
+  if (!db) initDatabase();
+
+  try {
+    const election = db
+      .prepare("SELECT id FROM elections WHERE is_active = 1")
+      .get();
+
+    if (!election) {
+      throw new Error("No active election");
+    }
+
+    // Delete existing candidates for this election
+    db.prepare("DELETE FROM candidates WHERE election_id = ?").run(election.id);
+
+    // Insert new candidates
+    const insertStmt = db.prepare(
+      `INSERT INTO candidates (election_id, code, name, tagline, symbol_path, vote_count)
+       VALUES (?, ?, ?, ?, ?, 0)`
+    );
+
+    candidates.forEach((candidate) => {
+      insertStmt.run(
+        election.id,
+        candidate.id || candidate.code || "",
+        candidate.name || "",
+        candidate.tagline || "",
+        candidate.symbolPath || candidate.symbol_path || "./assets/symbols/clock.svg"
+      );
+    });
+
+    console.log(`✅ Updated ${candidates.length} candidates in database`);
+    return { success: true, count: candidates.length };
+  } catch (error) {
+    console.error("Error updating candidates:", error);
+    throw error;
+  }
+}
+
 // Initialize on module load
 if (!db) {
   initDatabase();
@@ -219,6 +259,7 @@ module.exports = {
   recordVote,
   getResults,
   resetVotes,
+  updateCandidates,
   adminQuery,
   db: () => db,
 };

@@ -490,7 +490,7 @@ function initCandidatesPage() {
       return;
     }
 
-    const state = window.VotingStore.saveCandidates(candidates);
+    await window.VotingStore.saveCandidates(candidates);
     await refreshCandidates();
     setBoxMessage(backupMessage, "Candidate removed.", "reset");
   });
@@ -506,7 +506,7 @@ function initCandidatesPage() {
       }
 
       console.log("Saving", candidates.length, "candidates");
-      window.VotingStore.saveCandidates(candidates);
+      await window.VotingStore.saveCandidates(candidates);
       await refreshCandidates();
       setBoxMessage(backupMessage, "✅ Candidates saved successfully.", "success");
     });

@@ -170,3 +170,13 @@ ipcMain.handle("db:get-results", async () => {
     throw error;
   }
 });
+
+ipcMain.handle("db:update-candidates", async (event, candidates) => {
+  try {
+    const db = require("./database/db");
+    return db.updateCandidates(candidates);
+  } catch (error) {
+    console.error("DB Error updating candidates:", error);
+    throw error;
+  }
+});
