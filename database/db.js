@@ -49,7 +49,7 @@ function getVotingState() {
 
     const candidates = db
       .prepare(
-        `SELECT id, code, name, tagline, symbol_path as symbolPath 
+        `SELECT id, code, name, tagline, symbol_path as symbolPath, vote_count as votes
          FROM candidates WHERE election_id = ? 
          ORDER BY id ASC`
       )
