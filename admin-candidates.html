@@ -52,25 +52,6 @@
 
   <script src="./storage.js"></script>
   <script src="./admin-common.js"></script>
-  <script>
-    // Wait for DOM and scripts to be ready
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => {
-        if (window.AdminApp && window.AdminApp.initCandidatesPage) {
-          window.AdminApp.initCandidatesPage();
-        } else {
-          console.error("AdminApp or initCandidatesPage not available");
-          console.log("Available:", Object.keys(window.AdminApp || {}));
-        }
-      });
-    } else {
-      // DOM already loaded
-      if (window.AdminApp && window.AdminApp.initCandidatesPage) {
-        window.AdminApp.initCandidatesPage();
-      } else {
-        console.error("AdminApp or initCandidatesPage not available");
-      }
-    }
-  </script>
+  <script src="./admin-candidates.js"></script>
 </body>
 </html>
