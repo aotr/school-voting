@@ -1,4 +1,23 @@
 const ADMIN_SESSION_KEY = "school-voting-admin-session";
+
+// ============================================
+// PAGE INITIALIZATION FLAGS - Prevent Duplicates
+// ============================================
+// These flags ensure that event listeners are only added once per page session
+// If a page is navigated to multiple times, these prevent duplicate listeners
+let _electionPageInitialized = false;
+let _securityPageInitialized = false;
+let _candidatesPageInitialized = false;
+let _resultsPageInitialized = false;
+
+function resetPageInitializationFlags() {
+  _electionPageInitialized = false;
+  _securityPageInitialized = false;
+  _candidatesPageInitialized = false;
+  _resultsPageInitialized = false;
+  console.log("🔄 Page initialization flags reset");
+}
+
 const PRESET_SYMBOL_OPTIONS = [
   { label: "Clock", value: "./assets/symbols/clock.svg" },
   { label: "Galaxy", value: "./assets/symbols/galaxy.svg" },
@@ -209,9 +228,17 @@ function readFileAsDataUrl(file) {
 }
 
 async function initElectionPage() {
+  // Prevent duplicate initialization
+  if (_electionPageInitialized) {
+    console.log("⚠️ Election page already initialized, skipping");
+    return;
+  }
+
   if (!requireAdminSession()) {
     return;
   }
+
+  _electionPageInitialized = true;
 
   try {
     attachLogoutHandler();
@@ -247,9 +274,17 @@ async function initElectionPage() {
 }
 
 function initSecurityPage() {
+  // Prevent duplicate initialization
+  if (_securityPageInitialized) {
+    console.log("⚠️ Security page already initialized, skipping");
+    return;
+  }
+
   if (!requireAdminSession()) {
     return;
   }
+
+  _securityPageInitialized = true;
 
   attachLogoutHandler();
   const passwordForm = document.getElementById("password-form");
@@ -367,6 +402,12 @@ function updateCandidateCardHeader(row) {
 }
 
 function initCandidatesPage() {
+  // Prevent duplicate initialization
+  if (_candidatesPageInitialized) {
+    console.log("⚠️ Candidates page already initialized, skipping");
+    return;
+  }
+
   if (!requireAdminSession()) {
     return;
   }
@@ -395,6 +436,7 @@ function initCandidatesPage() {
   }
 
   console.log("✅ All required elements found for candidates page");
+  _candidatesPageInitialized = true;
 
   async function refreshCandidates() {
     try {
@@ -516,11 +558,18 @@ function initCandidatesPage() {
 }
 
 async function initResultsPage() {
+  // Prevent duplicate initialization
+  if (_resultsPageInitialized) {
+    console.log("⚠️ Results page already initialized, skipping");
+    return;
+  }
+
   if (!requireAdminSession()) {
     return;
   }
 
   attachLogoutHandler();
+  _resultsPageInitialized = true;
   
   try {
     const state = await window.VotingStore.loadVotingState();
