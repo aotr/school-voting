@@ -463,17 +463,34 @@ function initCandidatesPage() {
   refreshCandidates();
 
   addCandidateButton.addEventListener("click", async () => {
-    console.log("➕ Adding new candidate");
-    const state = await window.VotingStore.loadVotingState();
-    state.candidates.push({
-      id: `candidate-${state.candidates.length + 1}`,
-      name: "New Candidate",
-      tagline: "Symbol",
-      symbolPath: "./assets/symbols/clock.svg",
-      votes: 0,
-    });
-    window.VotingStore.saveVotingState(state);
-    await refreshCandidates();
+    console.log("➕ Adding new candidate to form");
+    try {
+      const state = await window.VotingStore.loadVotingState();
+      const newCandidateId = `candidate-${Date.now()}`;
+      
+      console.log(`Creating candidate with ID: ${newCandidateId}`);
+      
+      // Create new candidate (don't save yet - user must click Save Candidates)
+      const newCandidate = {
+        id: newCandidateId,
+        name: "New Candidate",
+        tagline: "Symbol",
+        symbolPath: "./assets/symbols/clock.svg",
+        votes: 0,
+      };
+      
+      // Add to memory state temporarily (for display only)
+      state.candidates.push(newCandidate);
+      
+      // Render updated form (but don't save to DB yet)
+      renderCandidates(state, candidateForm);
+      
+      console.log(`✅ New candidate added to form (total: ${state.candidates.length})`);
+      setBoxMessage(backupMessage, `New candidate added. Click 'Save Candidates' to save to database.`, "success");
+    } catch (error) {
+      console.error("❌ Error adding candidate:", error);
+      setBoxMessage(backupMessage, "Error adding candidate. Please try again.", "reset");
+    }
   });
 
   candidateForm.addEventListener("input", (event) => {
@@ -548,18 +565,46 @@ function initCandidatesPage() {
 
   if (saveCandidatesButton) {
     saveCandidatesButton.addEventListener("click", async () => {
-      console.log("💾 Saving candidates");
-      const candidates = collectCandidatesFromForm(candidateForm).filter((candidate) => candidate.name.trim());
+      console.log("💾 Save Candidates button clicked");
+      
+      try {
+        // Collect candidates from form
+        const allCandidates = collectCandidatesFromForm(candidateForm);
+        console.log(`📋 Form has ${allCandidates.length} candidates total`);
+        
+        // Filter out empty names to prevent invalid data
+        const validCandidates = allCandidates.filter((candidate) => {
+          const hasName = candidate.name && candidate.name.trim().length > 0;
+          if (!hasName) {
+            console.warn(`⚠️ Skipping candidate with empty name: ${candidate.id}`);
+          }
+          return hasName;
+        });
+        
+        console.log(`✓ Valid candidates to save: ${validCandidates.length}`);
 
-      if (!candidates.length) {
-        setBoxMessage(backupMessage, "Add at least one candidate before saving.", "reset");
-        return;
+        // Prevent saving empty list
+        if (!validCandidates.length) {
+          setBoxMessage(backupMessage, "Add at least one candidate before saving.", "reset");
+          return;
+        }
+
+        console.log(`💾 Saving ${validCandidates.length} valid candidates to database...`);
+        console.log("Candidates to save:", validCandidates.map(c => ({ id: c.id, name: c.name })));
+        
+        // Save to database
+        await window.VotingStore.saveCandidates(validCandidates);
+        
+        // Refresh to verify save
+        console.log("🔄 Refreshing from database to verify save...");
+        await refreshCandidates();
+        
+        setBoxMessage(backupMessage, `✅ ${validCandidates.length} candidates saved successfully to database.`, "success");
+        console.log("✅ Save complete and verified from database");
+      } catch (error) {
+        console.error("❌ Error saving candidates:", error);
+        setBoxMessage(backupMessage, `Error saving candidates: ${error.message}`, "reset");
       }
-
-      console.log("Saving", candidates.length, "candidates");
-      await window.VotingStore.saveCandidates(candidates);
-      await refreshCandidates();
-      setBoxMessage(backupMessage, "✅ Candidates saved successfully.", "success");
     });
   } else {
     console.error("❌ Could not attach save button listener - button not found");

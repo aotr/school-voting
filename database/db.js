@@ -214,37 +214,73 @@ function updateCandidates(candidates) {
   if (!db) initDatabase();
 
   try {
+    if (!Array.isArray(candidates)) {
+      throw new Error("Invalid candidates: must be an array");
+    }
+
     const election = db
       .prepare("SELECT id FROM elections WHERE is_active = 1")
       .get();
 
     if (!election) {
-      throw new Error("No active election");
+      throw new Error("No active election found");
     }
 
-    // Delete existing candidates for this election
-    db.prepare("DELETE FROM candidates WHERE election_id = ?").run(election.id);
+    console.log(`🔄 Updating candidates for election ${election.id}...`);
+    
+    // Get current candidates for comparison
+    const currentCandidates = db
+      .prepare("SELECT id, name, code FROM candidates WHERE election_id = ?")
+      .all(election.id);
+    console.log(`📋 Current candidates in DB: ${currentCandidates.length}`);
 
-    // Insert new candidates
+    // Delete existing candidates for this election (PREVENT DUPLICATES)
+    const deleteResult = db.prepare("DELETE FROM candidates WHERE election_id = ?").run(election.id);
+    console.log(`🗑️ Deleted ${deleteResult.changes} old candidates from database`);
+
+    // Insert new candidates with duplicate prevention
     const insertStmt = db.prepare(
       `INSERT INTO candidates (election_id, code, name, tagline, symbol_path, vote_count)
        VALUES (?, ?, ?, ?, ?, 0)`
     );
 
-    candidates.forEach((candidate) => {
-      insertStmt.run(
-        election.id,
-        candidate.id || candidate.code || "",
-        candidate.name || "",
-        candidate.tagline || "",
-        candidate.symbolPath || candidate.symbol_path || "./assets/symbols/clock.svg"
-      );
+    let insertedCount = 0;
+    candidates.forEach((candidate, index) => {
+      const candidateCode = candidate.id || candidate.code || `candidate-${index + 1}`;
+      const candidateName = (candidate.name || "").trim();
+      
+      // Skip empty candidates
+      if (!candidateName) {
+        console.warn(`⚠️ Skipping empty candidate at index ${index}`);
+        return;
+      }
+      
+      try {
+        insertStmt.run(
+          election.id,
+          candidateCode,
+          candidateName,
+          candidate.tagline || "",
+          candidate.symbolPath || candidate.symbol_path || "./assets/symbols/clock.svg"
+        );
+        insertedCount++;
+      } catch (err) {
+        console.error(`❌ Error inserting candidate ${candidateCode}:`, err.message);
+        throw err;
+      }
     });
 
-    console.log(`✅ Updated ${candidates.length} candidates in database`);
-    return { success: true, count: candidates.length };
+    console.log(`✅ Successfully inserted ${insertedCount} new candidates into database`);
+    
+    // Verify the insert
+    const verifyCount = db
+      .prepare("SELECT COUNT(*) as count FROM candidates WHERE election_id = ?")
+      .get(election.id);
+    console.log(`✔️ Verification: Database now has ${verifyCount.count} candidates for this election`);
+    
+    return { success: true, count: insertedCount, verified: verifyCount.count };
   } catch (error) {
-    console.error("Error updating candidates:", error);
+    console.error("❌ Error updating candidates:", error);
     throw error;
   }
 }

@@ -319,17 +319,30 @@ window.VotingStore = {
 
   // Candidates persistence - DATABASE FIRST
   async saveCandidates(candidates) {
+    // Validate input
+    if (!Array.isArray(candidates)) {
+      console.error("❌ saveCandidates: candidates must be an array", candidates);
+      throw new Error("Invalid candidates data");
+    }
+    
+    console.log(`💾 Saving ${candidates.length} candidates...`);
+    
     // ALWAYS try database first
     if (window.electronAPI) {
       try {
-        console.log(`💾 Saving ${candidates.length} candidates to DATABASE...`);
+        console.log("📊 Saving to DATABASE via IPC...");
         await window.electronAPI.updateCandidates(candidates);
-        console.log("✅ Candidates saved to DATABASE");
-        // Also sync to localStorage as backup
+        console.log(`✅ ${candidates.length} candidates saved to DATABASE successfully`);
+        
+        // Also sync to localStorage as backup (single call, not double)
         saveCandidates(candidates);
-        return saveCandidates(candidates);
+        console.log("✅ Candidates also synced to localStorage backup");
+        
+        // Return the result once, not twice
+        return { success: true, count: candidates.length, source: "database" };
       } catch (error) {
-        console.error("❌ Database save failed, using localStorage only:", error.message);
+        console.error("❌ Database save failed:", error.message);
+        console.log("⚠️ Falling back to localStorage only...");
         return saveCandidates(candidates);
       }
     }
