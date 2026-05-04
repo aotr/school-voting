@@ -438,9 +438,19 @@ function initCandidatesPage() {
   console.log("✅ All required elements found for candidates page");
   _candidatesPageInitialized = true;
 
+  // Track initialization call count
+  let refreshCallCount = 0;
+  const maxRefreshCalls = 5; // Prevent infinite refresh loops
+  
   async function refreshCandidates() {
+    refreshCallCount++;
+    if (refreshCallCount > maxRefreshCalls) {
+      console.error(`\u274c GUARD: refreshCandidates called too many times (${maxRefreshCalls}+), stopping to prevent loops`);
+      return;
+    }
+    
     try {
-      console.log("🔄 Refreshing candidates list from database...");
+      console.log(`🔄 refreshCandidates() call #${refreshCallCount} - Refreshing candidates list from database...`);
       const state = await window.VotingStore.loadVotingState();
       
       if (!state || !state.candidates) {

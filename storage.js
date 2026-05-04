@@ -195,6 +195,20 @@ function recordVote(candidateId) {
 
 function saveCandidates(candidates) {
   const state = loadVotingState();
+  
+  // GUARD: Don't accept candidates list if it's significantly smaller than current  
+  if (Array.isArray(candidates) && Array.isArray(state.candidates)) {
+    const candidateLossThreshold = 2; // Allow up to 2 candidate loss (editing)
+    const currentCount = state.candidates.length;
+    const newCount = candidates.length;
+    
+    if (newCount < currentCount - candidateLossThreshold) {
+      console.error(`\u274c GUARD: Rejecting candidate list - losing too many (${currentCount} → ${newCount})`);
+      console.error("This likely indicates a form collection bug. Not saving to prevent data loss.");
+      return state; // Return current state without saving
+    }
+  }
+  
   state.candidates = candidates
     .map((candidate, index) => normalizeCandidate(candidate, index))
     .filter((candidate) => candidate.name);
