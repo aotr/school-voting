@@ -578,76 +578,41 @@ async function initResultsPage() {
     votesMessageElement.textContent = `${updatedState.votes.length} vote${updatedState.votes.length !== 1 ? "s" : ""} cast.`;
   }
 
-  renderResults(state, document.getElementById("results-list"));
-  renderWinner(state, document.getElementById("winner-panel"));
-  await renderVotingHistory();
-
-  // Reset all votes handler
-  resetAllButton.addEventListener("click", async () => {
-    const confirmed = confirm("Are you sure you want to reset ALL votes? This cannot be undone.");
-    if (confirmed) {
-      window.VotingStore.resetVotes();
-      votesMessageElement.textContent = "All votes have been reset.";
-      votesMessageElement.className = "message-box is-success";
-      renderResults(await window.VotingStore.loadVotingState(), document.getElementById("results-list"));
-      renderWinner(await window.VotingStore.loadVotingState(), document.getElementById("winner-panel"));
-      await renderVotingHistory();
-      setTimeout(() => {
-        votesMessageElement.className = "message-box";
-      }, 3000);
+    // Auto-refresh function to update results in real-time
+    async function refreshResultsDisplay() {
+      try {
+        const freshState = await window.VotingStore.loadVotingState();
+        renderResults(freshState, document.getElementById("results-list"));
+        renderWinner(freshState, document.getElementById("winner-panel"));
+        await renderVotingHistory();
+      } catch (error) {
+        console.error("⚠️ Error refreshing results:", error);
+      }
     }
-  });
-  } catch (error) {
-    console.error("❌ Error initializing results page:", error);
-    const votesMessageElement = document.getElementById("votes-message");
-    if (votesMessageElement) {
-      votesMessageElement.textContent = "Error loading results: " + error.message;
-      votesMessageElement.className = "message-box is-reset";
-    }
-  }
-}
 
-function initBackupPage() {
-  if (!requireAdminSession()) {
-    return;
-  }
+    renderResults(state, document.getElementById("results-list"));
+    renderWinner(state, document.getElementById("winner-panel"));
+    await renderVotingHistory();
 
-  attachLogoutHandler();
-  const exportButton = document.getElementById("export-button");
-  const resetDemoButton = document.getElementById("reset-demo-button");
-  const backupMessage = document.getElementById("backup-message");
+    // Auto-refresh every 2 seconds to show new votes in real-time
+    console.log("⏰ Starting auto-refresh (2 second interval)");
+    const refreshInterval = setInterval(refreshResultsDisplay, 2000);
 
-  exportButton.addEventListener("click", () => {
-    const blob = new Blob([window.VotingStore.exportVotingState()], {
-      type: "application/json",
+    // Reset all votes handler
+    resetAllButton.addEventListener("click", async () => {
+      const confirmed = confirm("Are you sure you want to reset ALL votes? This cannot be undone.");
+      if (confirmed) {
+        window.VotingStore.resetVotes();
+        votesMessageElement.textContent = "All votes have been reset.";
+        votesMessageElement.className = "message-box is-success";
+        await refreshResultsDisplay();
+        setTimeout(() => {
+          votesMessageElement.className = "message-box";
+        }, 3000);
+      }
     });
-    const downloadUrl = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = downloadUrl;
-    anchor.download = "voting_backup.json";
-    anchor.click();
-    URL.revokeObjectURL(downloadUrl);
-    setBoxMessage(backupMessage, "Backup exported as voting_backup.json.", "success");
-  });
 
-  resetDemoButton.addEventListener("click", () => {
-    window.VotingStore.resetVotingState();
-    setBoxMessage(backupMessage, "Prototype data reset to defaults.", "reset");
-  });
-}
-
-window.AdminApp = {
-  PRESET_SYMBOL_OPTIONS,
-  setBoxMessage,
-  setAdminSession,
-  hasAdminSession,
-  requireAdminSession,
-  attachLogoutHandler,
-  initElectionPage,
-  initSecurityPage,
-  initCandidatesPage,
-  initResultsPage,
-  initBackupPage,
-  renderResults,
-  renderWinner,
-};
+    // Clean up interval when page is unloaded
+    window.addEventListener("beforeunload", () => {
+      clearInterval(refreshInterval);
+      console.log("🛑 Cleared auto-refresh interval");
