@@ -44,7 +44,7 @@ function getVotingState() {
       .get();
 
     if (!election) {
-      return { election: null, candidates: [] };
+      return { election: null, candidates: [], votes: [] };
     }
 
     const candidates = db
@@ -52,6 +52,15 @@ function getVotingState() {
         `SELECT id, code, name, tagline, symbol_path as symbolPath, vote_count as votes
          FROM candidates WHERE election_id = ? 
          ORDER BY id ASC`
+      )
+      .all(election.id);
+
+    // Get vote history (voting records)
+    const voteHistory = db
+      .prepare(
+        `SELECT id, candidate_id as candidateId, voted_at as votedAt
+         FROM votes WHERE election_id = ?
+         ORDER BY voted_at DESC`
       )
       .all(election.id);
 
@@ -63,6 +72,7 @@ function getVotingState() {
         votingOpen: election.votingOpen === 1,
       },
       candidates,
+      votes: voteHistory,
     };
   } catch (error) {
     console.error("Error getting voting state:", error);
@@ -129,7 +139,7 @@ function getResults() {
     const candidates = db
       .prepare(
         `SELECT 
-          c.id, c.name, c.symbol_path as symbolPath, c.vote_count as voteCount,
+          c.id, c.name, c.symbol_path as symbolPath, c.vote_count as votes,
           (SELECT COUNT(*) FROM votes WHERE election_id = ?) as totalVotes
          FROM candidates c
          WHERE c.election_id = ?
@@ -144,8 +154,8 @@ function getResults() {
         id: c.id,
         name: c.name,
         symbolPath: c.symbolPath,
-        voteCount: c.voteCount,
-        percentage: totalVotes > 0 ? ((c.voteCount / totalVotes) * 100).toFixed(2) : 0,
+        votes: c.votes,
+        percentage: totalVotes > 0 ? ((c.votes / totalVotes) * 100).toFixed(2) : 0,
       })),
       totalVotes,
     };
