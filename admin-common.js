@@ -318,11 +318,24 @@ function initCandidatesPage() {
   const saveCandidatesButton = document.getElementById("save-candidates-button");
   const backupMessage = document.getElementById("backup-message");
 
+  if (!candidateForm) {
+    console.error("candidate-form element not found!");
+    return;
+  }
+
   function refreshCandidates() {
-    renderCandidates(window.VotingStore.loadVotingState(), candidateForm);
+    const state = window.VotingStore.loadVotingState();
+    console.log("Loading candidates. State:", state);
+    console.log("Candidates count:", state.candidates ? state.candidates.length : 0);
+    renderCandidates(state, candidateForm);
   }
 
   refreshCandidates();
+
+  if (!addCandidateButton) {
+    console.error("add-candidate-button not found!");
+    return;
+  }
 
   addCandidateButton.addEventListener("click", () => {
     const state = window.VotingStore.loadVotingState();
@@ -333,6 +346,7 @@ function initCandidatesPage() {
       symbolPath: "./assets/symbols/clock.svg",
       votes: 0,
     });
+    window.VotingStore.saveVotingState(state);
     renderCandidates(state, candidateForm);
   });
 
@@ -419,8 +433,59 @@ function initResultsPage() {
 
   attachLogoutHandler();
   const state = window.VotingStore.loadVotingState();
+  const votesHistoryElement = document.getElementById("votes-history");
+  const votesMessageElement = document.getElementById("votes-message");
+  const resetAllButton = document.getElementById("reset-all-votes-button");
+
+  // Render voting history
+  function renderVotingHistory() {
+    const updatedState = window.VotingStore.loadVotingState();
+    votesHistoryElement.innerHTML = "";
+
+    if (!updatedState.votes || updatedState.votes.length === 0) {
+      votesHistoryElement.innerHTML = "<p class='support-text'>No votes cast yet.</p>";
+      return;
+    }
+
+    const votesList = document.createElement("ul");
+    votesList.className = "votes-history-list";
+
+    updatedState.votes.forEach((vote, index) => {
+      const candidate = updatedState.candidates.find((c) => c.id === vote.candidateId);
+      const candidateName = candidate ? candidate.name : "Unknown";
+      const voteItem = document.createElement("li");
+      voteItem.className = "vote-item";
+      voteItem.innerHTML = `
+        <span class="vote-number">#${index + 1}</span>
+        <span class="vote-candidate">${candidateName}</span>
+        <span class="vote-id">(${vote.candidateId})</span>
+      `;
+      votesList.appendChild(voteItem);
+    });
+
+    votesHistoryElement.appendChild(votesList);
+    votesMessageElement.textContent = `${updatedState.votes.length} vote${updatedState.votes.length !== 1 ? "s" : ""} cast.`;
+  }
+
   renderResults(state, document.getElementById("results-list"));
   renderWinner(state, document.getElementById("winner-panel"));
+  renderVotingHistory();
+
+  // Reset all votes handler
+  resetAllButton.addEventListener("click", () => {
+    const confirmed = confirm("Are you sure you want to reset ALL votes? This cannot be undone.");
+    if (confirmed) {
+      window.VotingStore.resetVotes();
+      votesMessageElement.textContent = "All votes have been reset.";
+      votesMessageElement.className = "message-box is-success";
+      renderResults(window.VotingStore.loadVotingState(), document.getElementById("results-list"));
+      renderWinner(window.VotingStore.loadVotingState(), document.getElementById("winner-panel"));
+      renderVotingHistory();
+      setTimeout(() => {
+        votesMessageElement.className = "message-box";
+      }, 3000);
+    }
+  });
 }
 
 function initBackupPage() {

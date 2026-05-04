@@ -372,7 +372,52 @@
   border-radius: 14px;
   background: rgba(16, 35, 54, 0.05);
 }
+/* Voting History Styles */
+.votes-history {
+  border: 2px solid rgba(16, 35, 54, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: rgba(248, 255, 244, 0.5);
+  margin: 12px 0;
+}
 
+.votes-history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.vote-item {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  background: white;
+  border-radius: 8px;
+  border-left: 4px solid #d4af37;
+  font-size: 0.9rem;
+}
+
+.vote-number {
+  font-weight: 700;
+  color: #102336;
+  text-align: center;
+}
+
+.vote-candidate {
+  font-weight: 600;
+  color: #16344a;
+}
+
+.vote-id {
+  font-size: 0.8rem;
+  color: #5d7383;
+}
 @media (max-width: 920px) {
   .admin-menu {
     display: grid;
