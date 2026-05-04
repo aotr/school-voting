@@ -148,220 +148,92 @@ function migrateVotingState(state) {
   });
 }
 
-function loadVotingState() {
-  const raw = window.localStorage.getItem(VOTING_STORAGE_KEY);
-
-  if (!raw) {
-    const initialState = cloneVotingState(DEFAULT_VOTING_STATE);
-    saveVotingState(initialState);
-    return initialState;
-  }
-
-  try {
-    const parsed = JSON.parse(raw);
-    const normalized = migrateVotingState(normalizeVotingState(parsed));
-    saveVotingState(normalized);
-    return normalized;
-  } catch (error) {
-    const fallback = cloneVotingState(DEFAULT_VOTING_STATE);
-    saveVotingState(fallback);
-    return fallback;
-  }
-}
-
-function saveVotingState(state) {
-  window.localStorage.setItem(
-    VOTING_STORAGE_KEY,
-    JSON.stringify(normalizeVotingState(state))
-  );
-}
-
-function recordVote(candidateId) {
-  const state = loadVotingState();
-  const candidate = state.candidates.find((item) => item.id === candidateId);
-
-  if (!candidate || !state.election.votingOpen) {
-    return null;
-  }
-
-  candidate.votes += 1;
-  state.votes.push({
-    candidateId,
-    votedAt: new Date().toISOString(),
-  });
-  saveVotingState(state);
-  return candidate;
-}
-
-function saveCandidates(candidates) {
-  const state = loadVotingState();
-  
-  // GUARD: Don't accept candidates list if it's significantly smaller than current  
-  if (Array.isArray(candidates) && Array.isArray(state.candidates)) {
-    const candidateLossThreshold = 2; // Allow up to 2 candidate loss (editing)
-    const currentCount = state.candidates.length;
-    const newCount = candidates.length;
-    
-    if (newCount < currentCount - candidateLossThreshold) {
-      console.error(`\u274c GUARD: Rejecting candidate list - losing too many (${currentCount} → ${newCount})`);
-      console.error("This likely indicates a form collection bug. Not saving to prevent data loss.");
-      return state; // Return current state without saving
-    }
-  }
-  
-  state.candidates = candidates
-    .map((candidate, index) => normalizeCandidate(candidate, index))
-    .filter((candidate) => candidate.name);
-  saveVotingState(state);
-  return state;
-}
-
-function saveElection(election) {
-  const state = loadVotingState();
-  state.election = {
-    title: String(election.title || state.election.title).trim(),
-    year: Number(election.year || state.election.year),
-    votingOpen: Boolean(election.votingOpen),
-  };
-  saveVotingState(state);
-  return state;
-}
-
-function updateAdminPassword(nextPassword) {
-  const state = loadVotingState();
-  state.adminPassword = String(nextPassword || "").trim() || state.adminPassword;
-  saveVotingState(state);
-  return state;
-}
-
-function verifyAdminPassword(password) {
-  return loadVotingState().adminPassword === String(password);
-}
-
-function exportVotingState() {
-  return JSON.stringify(loadVotingState(), null, 2);
-}
-
-function resetVotingState() {
-  const initialState = cloneVotingState(DEFAULT_VOTING_STATE);
-  saveVotingState(initialState);
-  return initialState;
-}
+// All localStorage functions removed - now using direct SQLite database via preload
+// These were the old synchronous fallback functions, no longer needed
 
 window.VotingStore = {
-  // Async methods for Electron/IPC support - DATABASE FIRST
+  // Direct database access (NO IPC, NO localStorage fallback)
   async loadVotingState() {
-    // ALWAYS try database first (Electron/IPC)
-    if (window.electronAPI) {
-      try {
-        console.log("📊 Loading state from DATABASE via IPC...");
-        const data = await window.electronAPI.getVotingState();
-        console.log("✅ State loaded from DATABASE:", { 
-          candidates: data.candidates?.length, 
-          votes: data.votes?.length,
-          source: "database"
-        });
-        return data;
-      } catch (error) {
-        console.error("❌ Database load failed, falling back to localStorage:", error.message);
-        const fallback = loadVotingState();
-        console.log("⚠️ Using fallback from localStorage:", { 
-          candidates: fallback.candidates?.length,
-          source: "localStorage"
-        });
-        return fallback;
-      }
+    try {
+      console.log("📊 Loading state from DATABASE...");
+      const data = window._DBStore.loadVotingState();
+      console.log("✅ State loaded from DATABASE:", { 
+        candidates: data?.candidates?.length, 
+        votes: data?.totalVotes,
+      });
+      return data;
+    } catch (error) {
+      console.error("❌ Database load failed:", error.message);
+      throw error;
     }
-    
-    // Non-Electron fallback (e.g., web browser)
-    console.log("ℹ️ No electronAPI, loading from localStorage...");
-    return loadVotingState();
   },
 
   async recordVote(candidateId) {
-    // ALWAYS try database first
-    if (window.electronAPI) {
-      try {
-        console.log(`🗳️ Recording vote for ${candidateId} to DATABASE...`);
-        const result = await window.electronAPI.recordVote(candidateId);
-        console.log("✅ Vote recorded in DATABASE");
-        return result;
-      } catch (error) {
-        console.error("❌ Database vote failed, using localStorage:", error.message);
-        return recordVote(candidateId);
-      }
+    try {
+      console.log(`🗳️ Recording vote for ${candidateId}...`);
+      const result = window._DBStore.recordVote(candidateId);
+      console.log("✅ Vote recorded in DATABASE");
+      return result;
+    } catch (error) {
+      console.error("❌ Error recording vote:", error.message);
+      throw error;
     }
-    return recordVote(candidateId);
   },
 
   async resetVotingState() {
-    // ALWAYS try database first
-    if (window.electronAPI) {
-      try {
-        console.log("🔄 Resetting votes in DATABASE...");
-        await window.electronAPI.resetVotes();
-        console.log("✅ Votes reset in DATABASE");
-        return { success: true };
-      } catch (error) {
-        console.error("❌ Database reset failed, using localStorage:", error.message);
-        return resetVotingState();
-      }
+    try {
+      console.log("🔄 Resetting votes in DATABASE...");
+      window._DBStore.resetVotes();
+      console.log("✅ Votes reset in DATABASE");
+      return { success: true };
+    } catch (error) {
+      console.error("❌ Error resetting votes:", error.message);
+      throw error;
     }
-    return resetVotingState();
   },
 
   async getResults() {
-    // ALWAYS try database first
-    if (window.electronAPI) {
-      try {
-        console.log("📈 Loading results from DATABASE...");
-        const results = await window.electronAPI.getResults();
-        console.log("✅ Results loaded from DATABASE:", {
-          candidates: results.candidates?.length,
-          source: "database"
-        });
-        return results;
-      } catch (error) {
-        console.error("❌ Database results failed, using localStorage:", error.message);
-        const state = loadVotingState();
-        return { candidates: state.candidates, totalVotes: 0 };
-      }
+    try {
+      console.log("📈 Loading results from DATABASE...");
+      const results = window._DBStore.getResults();
+      console.log("✅ Results loaded from DATABASE:", {
+        candidates: results?.candidates?.length,
+      });
+      return results;
+    } catch (error) {
+      console.error("❌ Error loading results:", error.message);
+      throw error;
     }
-    const state = loadVotingState();
-    return { candidates: state.candidates, totalVotes: 0 };
   },
 
-  // Candidates persistence - DATABASE FIRST
+  // Candidates persistence - Direct database only
   async saveCandidates(candidates) {
-    // Validate input
     if (!Array.isArray(candidates)) {
       console.error("❌ saveCandidates: candidates must be an array", candidates);
       throw new Error("Invalid candidates data");
     }
     
-    console.log(`💾 Saving ${candidates.length} candidates...`);
+    console.log(`💾 Saving ${candidates.length} candidates to DATABASE...`);
     
-    // ALWAYS try database first
-    if (window.electronAPI) {
-      try {
-        console.log("📊 Saving to DATABASE via IPC...");
-        await window.electronAPI.updateCandidates(candidates);
-        console.log(`✅ ${candidates.length} candidates saved to DATABASE successfully`);
-        
-        // Also sync to localStorage as backup (single call, not double)
-        saveCandidates(candidates);
-        console.log("✅ Candidates also synced to localStorage backup");
-        
-        // Return the result once, not twice
-        return { success: true, count: candidates.length, source: "database" };
-      } catch (error) {
-        console.error("❌ Database save failed:", error.message);
-        console.log("⚠️ Falling back to localStorage only...");
-        return saveCandidates(candidates);
+    try {
+      // Validate before save
+      const validCandidates = candidates.filter(c => {
+        const name = (c.name || "").trim();
+        return name.length > 0;
+      });
+
+      if (validCandidates.length === 0) {
+        throw new Error("No valid candidates to save");
       }
+
+      window._DBStore.updateCandidates(validCandidates);
+      console.log(`✅ ${validCandidates.length} candidates saved to DATABASE`);
+      
+      return { success: true, count: validCandidates.length, source: "database" };
+    } catch (error) {
+      console.error("❌ Error saving candidates:", error.message);
+      throw error;
     }
-    console.log("ℹ️ No electronAPI, saving to localStorage only...");
-    return saveCandidates(candidates);
   },
 
   saveElection,
@@ -370,4 +242,55 @@ window.VotingStore = {
   exportVotingState,
   saveVotingState,
 };
+
+// Admin helper functions (using direct database)
+function saveElection(election) {
+  try {
+    window._DBStore.saveElection(election);
+    console.log("✅ Election saved");
+    return true;
+  } catch (error) {
+    console.error("❌ Error saving election:", error.message);
+    throw error;
+  }
+}
+
+function saveVotingState(state) {
+  // No-op: database handles persistence directly
+  return state;
+}
+
+function updateAdminPassword(nextPassword) {
+  try {
+    window._DBStore.saveAdminPassword(nextPassword);
+    console.log("✅ Admin password updated");
+    return true;
+  } catch (error) {
+    console.error("❌ Error updating password:", error.message);
+    throw error;
+  }
+}
+
+function verifyAdminPassword(password) {
+  try {
+    return window._DBStore.verifyAdminPassword(password);
+  } catch (error) {
+    console.error("❌ Error verifying password:", error.message);
+    return false;
+  }
+}
+
+function exportVotingState() {
+  try {
+    return window._DBStore.exportVotingState();
+  } catch (error) {
+    console.error("❌ Error exporting state:", error.message);
+    return "{}";
+  }
+}
+
+// Initialize
+if (typeof window !== "undefined" && window.VotingStore) {
+  console.log("✅ VotingStore initialized - Using direct SQLite database (no IPC, no localStorage)");
+}
 

@@ -1,15 +1,18 @@
-const { contextBridge, ipcRenderer } = require("electron");
+const { contextBridge } = require("electron");
+const { VotingStore } = require("./db-direct.js");
 
-// Expose secure IPC API to renderer process
-contextBridge.exposeInMainWorld("electronAPI", {
-  // Database operations
-  getVotingState: () => ipcRenderer.invoke("db:get-voting-state"),
-  recordVote: (candidateId) => ipcRenderer.invoke("db:record-vote", candidateId),
-  resetVotes: () => ipcRenderer.invoke("db:reset-votes"),
-  updateCandidates: (candidates) => ipcRenderer.invoke("db:update-candidates", candidates),
-  getResults: () => ipcRenderer.invoke("db:get-results"),
-  adminQuery: (query, params) => ipcRenderer.invoke("db:admin-query", query, params),
-
-  // Utility
-  getAppPath: () => ipcRenderer.invoke("app:get-path"),
+// Expose VotingStore directly via contextBridge (no IPC needed)
+// Using _DBStore internally, VotingStore is the public API in storage.js
+contextBridge.exposeInMainWorld("_DBStore", {
+  // Database operations (direct, no IPC)
+  loadVotingState: () => VotingStore.loadVotingState(),
+  recordVote: (candidateId) => VotingStore.recordVote(candidateId),
+  resetVotes: () => VotingStore.resetVotes(),
+  updateCandidates: (candidates) => VotingStore.updateCandidates(candidates),
+  getResults: () => VotingStore.getResults(),
+  // Admin functions
+  saveElection: (election) => VotingStore.saveElection(election),
+  saveAdminPassword: (password) => VotingStore.saveAdminPassword(password),
+  verifyAdminPassword: (password) => VotingStore.verifyAdminPassword(password),
+  exportVotingState: () => VotingStore.exportVotingState(),
 });

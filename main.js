@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain } = require("electron");
+const { app, BrowserWindow, Menu } = require("electron");
 const path = require("path");
 const isDev = process.env.ELECTRON_DEV === "true" || process.argv.includes("--dev");
 
@@ -119,64 +119,3 @@ function createMenu() {
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 }
-
-// IPC handlers for database operations
-ipcMain.handle("db:get-voting-state", async () => {
-  try {
-    const db = require("./database/db");
-    return db.getVotingState();
-  } catch (error) {
-    console.error("DB Error:", error);
-    throw error;
-  }
-});
-
-ipcMain.handle("db:record-vote", async (event, candidateId) => {
-  try {
-    const db = require("./database/db");
-    return db.recordVote(candidateId);
-  } catch (error) {
-    console.error("DB Error:", error);
-    throw error;
-  }
-});
-
-ipcMain.handle("db:reset-votes", async () => {
-  try {
-    const db = require("./database/db");
-    return db.resetVotes();
-  } catch (error) {
-    console.error("DB Error:", error);
-    throw error;
-  }
-});
-
-ipcMain.handle("db:admin-query", async (event, query, params) => {
-  try {
-    const db = require("./database/db");
-    return db.adminQuery(query, params);
-  } catch (error) {
-    console.error("DB Error:", error);
-    throw error;
-  }
-});
-
-ipcMain.handle("db:get-results", async () => {
-  try {
-    const db = require("./database/db");
-    return db.getResults();
-  } catch (error) {
-    console.error("DB Error:", error);
-    throw error;
-  }
-});
-
-ipcMain.handle("db:update-candidates", async (event, candidates) => {
-  try {
-    const db = require("./database/db");
-    return db.updateCandidates(candidates);
-  } catch (error) {
-    console.error("DB Error updating candidates:", error);
-    throw error;
-  }
-});
