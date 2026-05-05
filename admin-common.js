@@ -9,12 +9,14 @@ let _electionPageInitialized = false;
 let _securityPageInitialized = false;
 let _candidatesPageInitialized = false;
 let _resultsPageInitialized = false;
+let _backupPageInitialized = false;
 
 function resetPageInitializationFlags() {
   _electionPageInitialized = false;
   _securityPageInitialized = false;
   _candidatesPageInitialized = false;
   _resultsPageInitialized = false;
+  _backupPageInitialized = false;
   console.log("🔄 Page initialization flags reset");
 }
 
@@ -304,6 +306,73 @@ function initSecurityPage() {
     setBoxMessage(securityMessage, "Admin password updated.", "success");
   });
 }
+
+function initBackupPage() {
+  // Prevent duplicate initialization
+  if (_backupPageInitialized) {
+    console.log("⚠️ Backup page already initialized, skipping");
+    return;
+  }
+
+  if (!requireAdminSession()) {
+    return;
+  }
+
+  _backupPageInitialized = true;
+
+  attachLogoutHandler();
+
+  const exportButton = document.getElementById("export-button");
+  const resetButton = document.getElementById("reset-demo-button");
+  const messageElement = document.getElementById("backup-message");
+
+  if (!messageElement) {
+    console.warn("⚠️ Message element not found on backup page");
+    return;
+  }
+
+  // Export backup handler
+  if (exportButton) {
+    exportButton.addEventListener("click", async () => {
+      try {
+        const state = await window.VotingStore.loadVotingState();
+        const dataStr = JSON.stringify(state, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `voting-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        setBoxMessage(messageElement, "✅ Backup exported successfully", "success");
+      } catch (error) {
+        setBoxMessage(messageElement, "Error exporting backup: " + error.message, "error");
+      }
+    });
+  }
+
+  // Reset data handler
+  if (resetButton) {
+    resetButton.addEventListener("click", async () => {
+      if (!confirm("Are you sure you want to reset all demo data? This cannot be undone.")) {
+        return;
+      }
+
+      try {
+        await window.APIClient.resetVotes();
+        setBoxMessage(messageElement, "✅ Demo data reset successfully", "success");
+        setTimeout(() => {
+          window.location.href = "./admin.html";
+        }, 1500);
+      } catch (error) {
+        setBoxMessage(messageElement, "Error resetting data: " + error.message, "error");
+      }
+    });
+  }
+}
+
 
 function renderCandidates(state, candidateForm) {
   if (!state || !state.candidates || !Array.isArray(state.candidates)) {
@@ -675,6 +744,11 @@ async function initResultsPage() {
     votesList.className = "votes-history-list";
 
     updatedState.votes.forEach((vote, index) => {
+      // Skip null votes (placeholders from totalVotes)
+      if (!vote || !vote.candidateId) {
+        return;
+      }
+      
       const candidate = updatedState.candidates.find((c) => c.id === vote.candidateId);
       const candidateName = candidate ? candidate.name : "Unknown";
       const voteItem = document.createElement("li");
@@ -687,8 +761,12 @@ async function initResultsPage() {
       votesList.appendChild(voteItem);
     });
 
-    votesHistoryElement.appendChild(votesList);
-    votesMessageElement.textContent = `${updatedState.votes.length} vote${updatedState.votes.length !== 1 ? "s" : ""} cast.`;
+    if (votesList.children.length === 0) {
+      votesHistoryElement.innerHTML = "<p class='support-text'>No voting history available.</p>";
+    } else {
+      votesHistoryElement.appendChild(votesList);
+    }
+    votesMessageElement.textContent = `${updatedState.totalVotes || 0} vote${updatedState.totalVotes !== 1 ? "s" : ""} cast.`;
   }
 
     // Auto-refresh function to update results in real-time
@@ -776,6 +854,7 @@ window.AdminApp = {
   readFileAsDataUrl,
   initElectionPage,
   initSecurityPage,
+  initBackupPage,
   renderCandidates,
   collectCandidatesFromForm,
   updateCandidateCardHeader,

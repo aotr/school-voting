@@ -18,20 +18,25 @@ const vvpatStatus = document.getElementById("vvpat-status");
 const vvpatPlaceholder = document.getElementById("vvpat-placeholder");
 
 async function getState() {
-  // Load from DATABASE via Electron IPC
-  // This method prioritizes database over localStorage
-  console.log("🔄 getState() - Loading from DATABASE via Electron IPC...");
+  // Load from Express API server
+  console.log("🔄 getState() - Loading from API server...");
   try {
-    const state = await window.VotingStore.loadVotingState();
-    console.log("✅ getState() - Loaded from DATABASE:", {
-      candidatesCount: state?.candidates?.length,
-      votesCount: state?.votes?.length,
-      electionTitle: state?.election?.title,
-      source: "Electron IPC → Database"
+    const data = await window.APIClient.getElection();
+    console.log("✅ getState() - Loaded from API:", {
+      candidatesCount: data?.candidates?.length,
+      totalVotes: data?.totalVotes,
+      electionTitle: data?.election?.title,
+      source: "Express API → Database"
     });
-    return state;
+    // Transform API response to match expected format
+    return {
+      election: data.election,
+      candidates: data.candidates,
+      votes: Array(data.totalVotes).fill(null), // Mock votes array for compatibility
+      totalVotes: data.totalVotes,
+    };
   } catch (error) {
-    console.error("❌ getState() - Failed to load from database:", error);
+    console.error("❌ getState() - Failed to load from API:", error);
     throw error;
   }
 }
@@ -354,7 +359,7 @@ candidateList.addEventListener("click", async (event) => {
     return;
   }
 
-  // Await the state promise - loads from DATABASE via IPC
+  // Await the state promise - loads from Express API
   const state = await getState();
 
   if (!state.election.votingOpen) {
@@ -362,17 +367,23 @@ candidateList.addEventListener("click", async (event) => {
   }
 
   const selectedId = voteButton.dataset.voteButton;
-  console.log(`🗳️ Recording vote for candidate ${selectedId} to DATABASE...`);
+  console.log(`🗳️ Recording vote for candidate ${selectedId} via API...`);
   
-  // Record vote to DATABASE via IPC
-  const candidate = await window.VotingStore.recordVote(selectedId);
+  // Record vote via Express API
+  const result = await window.APIClient.recordVote(selectedId);
   const selectedRow = voteButton.closest(".candidate-row");
 
-  if (!candidate) {
+  if (!result || !result.success) {
     console.error("❌ Vote recording failed");
     setMessage("Unable to record vote. Please check admin settings.", "reset");
     return;
   }
+  
+  // Create a mock candidate object for compatibility
+  const candidate = {
+    id: selectedId,
+    name: state.candidates.find(c => c.id === selectedId)?.name || selectedId,
+  };
 
   console.log(`✅ Vote recorded successfully to DATABASE for ${candidate.name}`);
   playEVMBeep();

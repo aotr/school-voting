@@ -32,13 +32,13 @@ const VotingStore = {
     const database = getDatabase();
     
     try {
-      // Get active election
+      // Get active election (only one election in this system)
       const election = database
-        .prepare("SELECT id, title FROM elections WHERE is_active = 1")
+        .prepare("SELECT id, title, year, is_active FROM elections LIMIT 1")
         .get();
 
       if (!election) {
-        console.error("❌ No active election found");
+        console.error("❌ No election found");
         return null;
       }
 
@@ -63,6 +63,8 @@ const VotingStore = {
         election: {
           id: election.id,
           title: election.title,
+          year: election.year,
+          votingOpen: election.is_active === 1,
         },
         candidates: candidates.map(c => ({
           id: c.code,
@@ -218,15 +220,29 @@ const VotingStore = {
         .all(election.id);
       console.log(`📋 Current candidates in DB: ${currentCandidates.length}`);
 
-      // CRITICAL GUARD: Prevent data loss from cascading updates
+      // SMART GUARD: Prevent accidental data loss while allowing admin flexibility
       const currentCount = currentCandidates.length;
       const newCount = candidates.filter(c => (c.name || "").trim()).length;
-      const candidateLossThreshold = 2;
+      const minCandidates = 2; // Must keep at least 2 candidates
+      const minRetentionRatio = 0.5; // Must keep at least 50% of current
+      const minRetentionCount = Math.ceil(currentCount * minRetentionRatio);
       
-      if (newCount < currentCount - candidateLossThreshold) {
-        const errorMsg = `❌ CRITICAL GUARD: Would lose ${currentCount - newCount} candidates (${currentCount} → ${newCount}). Rejecting update to prevent data loss.`;
+      console.log(`🛡️ Guard check: Current=${currentCount}, New=${newCount}, Min=${minCandidates}, MinRetention=${minRetentionCount}`);
+      
+      if (newCount < minCandidates) {
+        const errorMsg = `❌ GUARD: Must have at least ${minCandidates} candidates. Update would result in ${newCount} candidates.`;
         console.error(errorMsg);
         throw new Error(errorMsg);
+      }
+      
+      if (newCount < minRetentionCount) {
+        const errorMsg = `❌ GUARD: Must keep at least 50% of current candidates (${minRetentionCount}). Update would result in ${newCount} candidates (${currentCount} → ${newCount}).`;
+        console.error(errorMsg);
+        throw new Error(errorMsg);
+      }
+      
+      if (newCount < currentCount) {
+        console.warn(`⚠️ Proceeding with candidate reduction: ${currentCount} → ${newCount} (loss: ${currentCount - newCount})`);
       }
 
       // Delete existing candidates
@@ -292,13 +308,16 @@ const VotingStore = {
         throw new Error("No active election found");
       }
 
+      // Handle votingOpen -> is_active mapping
+      const isActive = election.votingOpen !== undefined ? (election.votingOpen ? 1 : 0) : 1;
+
       database.prepare(`
         UPDATE elections
-        SET title = ?, year = ?
+        SET title = ?, year = ?, is_active = ?
         WHERE id = ?
-      `).run(election.title, election.year, activeElection.id);
+      `).run(election.title, election.year, isActive, activeElection.id);
 
-      console.log("✅ Election updated");
+      console.log("✅ Election updated:", { title: election.title, year: election.year, votingOpen: isActive === 1 });
       return true;
     } catch (error) {
       console.error("❌ Error saving election:", error);

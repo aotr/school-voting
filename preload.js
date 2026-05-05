@@ -1,5 +1,5 @@
 const { contextBridge } = require("electron");
-const { VotingStore } = require(__dirname + "/db-direct.js");
+const { VotingStore } = require("./db-direct.js");
 
 // Expose VotingStore directly via contextBridge (no IPC needed)
 // Using _DBStore internally, VotingStore is the public API in storage.js

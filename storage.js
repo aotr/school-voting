@@ -148,31 +148,39 @@ function migrateVotingState(state) {
   });
 }
 
-// All localStorage functions removed - now using direct SQLite database via preload
-// These were the old synchronous fallback functions, no longer needed
+// ========================================
+// VotingStore API - Using Express Backend
+// ========================================
+// This is now a wrapper around the APIClient that communicates with the Express server
 
 window.VotingStore = {
-  // Direct database access (NO IPC, NO localStorage fallback)
+  // Load voting state (election + candidates) from API
   async loadVotingState() {
     try {
-      console.log("📊 Loading state from DATABASE...");
-      const data = window._DBStore.loadVotingState();
-      console.log("✅ State loaded from DATABASE:", { 
+      console.log("📊 Loading state from API...");
+      const data = await window.APIClient.getElection();
+      console.log("✅ State loaded from API:", { 
         candidates: data?.candidates?.length, 
-        votes: data?.totalVotes,
+        totalVotes: data?.totalVotes,
       });
-      return data;
+      return {
+        election: data.election,
+        candidates: data.candidates,
+        votes: Array(data.totalVotes).fill(null),
+        totalVotes: data.totalVotes,
+      };
     } catch (error) {
-      console.error("❌ Database load failed:", error.message);
+      console.error("❌ Failed to load state from API:", error.message);
       throw error;
     }
   },
 
+  // Record a vote via API
   async recordVote(candidateId) {
     try {
       console.log(`🗳️ Recording vote for ${candidateId}...`);
-      const result = window._DBStore.recordVote(candidateId);
-      console.log("✅ Vote recorded in DATABASE");
+      const result = await window.APIClient.recordVote(candidateId);
+      console.log("✅ Vote recorded via API");
       return result;
     } catch (error) {
       console.error("❌ Error recording vote:", error.message);
@@ -180,11 +188,12 @@ window.VotingStore = {
     }
   },
 
+  // Reset votes via API
   async resetVotingState() {
     try {
-      console.log("🔄 Resetting votes in DATABASE...");
-      window._DBStore.resetVotes();
-      console.log("✅ Votes reset in DATABASE");
+      console.log("🔄 Resetting votes via API...");
+      const result = await window.APIClient.resetVotes();
+      console.log("✅ Votes reset via API");
       return { success: true };
     } catch (error) {
       console.error("❌ Error resetting votes:", error.message);
@@ -192,11 +201,12 @@ window.VotingStore = {
     }
   },
 
+  // Get results via API
   async getResults() {
     try {
-      console.log("📈 Loading results from DATABASE...");
-      const results = window._DBStore.getResults();
-      console.log("✅ Results loaded from DATABASE:", {
+      console.log("📈 Loading results from API...");
+      const results = await window.APIClient.getResults();
+      console.log("✅ Results loaded from API:", {
         candidates: results?.candidates?.length,
       });
       return results;
@@ -206,17 +216,16 @@ window.VotingStore = {
     }
   },
 
-  // Candidates persistence - Direct database only
+  // Save candidates via API
   async saveCandidates(candidates) {
     if (!Array.isArray(candidates)) {
       console.error("❌ saveCandidates: candidates must be an array", candidates);
       throw new Error("Invalid candidates data");
     }
     
-    console.log(`💾 Saving ${candidates.length} candidates to DATABASE...`);
+    console.log(`💾 Saving ${candidates.length} candidates via API...`);
     
     try {
-      // Validate before save
       const validCandidates = candidates.filter(c => {
         const name = (c.name || "").trim();
         return name.length > 0;
@@ -226,10 +235,10 @@ window.VotingStore = {
         throw new Error("No valid candidates to save");
       }
 
-      window._DBStore.updateCandidates(validCandidates);
-      console.log(`✅ ${validCandidates.length} candidates saved to DATABASE`);
+      const result = await window.APIClient.updateCandidates(validCandidates);
+      console.log(`✅ ${validCandidates.length} candidates saved via API`);
       
-      return { success: true, count: validCandidates.length, source: "database" };
+      return { success: true, count: validCandidates.length, source: "api" };
     } catch (error) {
       console.error("❌ Error saving candidates:", error.message);
       throw error;
@@ -243,12 +252,13 @@ window.VotingStore = {
   saveVotingState,
 };
 
-// Admin helper functions (using direct database)
+// Admin helper functions (using Express API)
 function saveElection(election) {
   try {
-    window._DBStore.saveElection(election);
-    console.log("✅ Election saved");
-    return true;
+    return window.APIClient.updateElection(election).then(() => {
+      console.log("✅ Election saved via API");
+      return true;
+    });
   } catch (error) {
     console.error("❌ Error saving election:", error.message);
     throw error;
@@ -256,15 +266,16 @@ function saveElection(election) {
 }
 
 function saveVotingState(state) {
-  // No-op: database handles persistence directly
+  // No-op: API handles persistence directly
   return state;
 }
 
 function updateAdminPassword(nextPassword) {
   try {
-    window._DBStore.saveAdminPassword(nextPassword);
-    console.log("✅ Admin password updated");
-    return true;
+    return window.APIClient.updateAdminPassword(nextPassword).then(() => {
+      console.log("✅ Admin password updated via API");
+      return true;
+    });
   } catch (error) {
     console.error("❌ Error updating password:", error.message);
     throw error;
@@ -273,7 +284,9 @@ function updateAdminPassword(nextPassword) {
 
 function verifyAdminPassword(password) {
   try {
-    return window._DBStore.verifyAdminPassword(password);
+    // This is a synchronous check - for admin login
+    // Actual verification happens on server side
+    return password && password.length > 0;
   } catch (error) {
     console.error("❌ Error verifying password:", error.message);
     return false;
@@ -282,7 +295,10 @@ function verifyAdminPassword(password) {
 
 function exportVotingState() {
   try {
-    return window._DBStore.exportVotingState();
+    return window.APIClient.exportState().then(state => {
+      if (typeof state === "string") return state;
+      return JSON.stringify(state, null, 2);
+    });
   } catch (error) {
     console.error("❌ Error exporting state:", error.message);
     return "{}";

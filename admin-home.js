@@ -5,8 +5,8 @@ const loginMessage = document.getElementById("login-message");
 const homeStatusPanel = document.getElementById("home-status-panel");
 const homeWinnerPanel = document.getElementById("home-winner-panel");
 
-function renderHomeDashboard() {
-  const state = window.VotingStore.loadVotingState();
+async function renderHomeDashboard() {
+  const state = await window.VotingStore.loadVotingState();
   const totalVotes = state.votes.length;
   const candidateCount = state.candidates.length;
 
@@ -26,27 +26,32 @@ function renderHomeDashboard() {
   window.AdminApp.renderWinner(state, homeWinnerPanel);
 }
 
-function openDashboard() {
+async function openDashboard() {
   adminLogin.classList.add("hidden");
   adminDashboard.classList.remove("hidden");
   window.AdminApp.attachLogoutHandler();
-  renderHomeDashboard();
+  await renderHomeDashboard();
 }
 
 if (window.AdminApp.hasAdminSession()) {
-  openDashboard();
+  (async () => {
+    await openDashboard();
+  })();
 }
 
-loginForm.addEventListener("submit", (event) => {
+loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const password = document.getElementById("admin-password").value;
 
-  if (!window.VotingStore.verifyAdminPassword(password)) {
+  try {
+    // Attempt login via API
+    await window.APIClient.adminLogin(password);
+    
+    window.AdminApp.setAdminSession(true);
+    window.AdminApp.setBoxMessage(loginMessage, "Admin access granted.", "success");
+    await openDashboard();
+  } catch (error) {
+    console.error("❌ Login failed:", error.message);
     window.AdminApp.setBoxMessage(loginMessage, "Incorrect password. Please try again.", "reset");
-    return;
   }
-
-  window.AdminApp.setAdminSession(true);
-  window.AdminApp.setBoxMessage(loginMessage, "Admin access granted.", "success");
-  openDashboard();
 });
