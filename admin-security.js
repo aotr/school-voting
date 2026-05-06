@@ -1,1 +1,0 @@
-window.AdminApp.initSecurityPage();

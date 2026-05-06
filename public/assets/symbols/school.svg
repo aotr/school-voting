@@ -1,0 +1,52 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="120" height="120" rx="28" fill="#1B3952"/>
+  
+  <!-- Main building -->
+  <rect x="20" y="50" width="80" height="52" fill="#E8B917" stroke="#0A1F2E" stroke-width="3"/>
+  
+  <!-- Roof triangle -->
+  <path d="M20 50L60 15L100 50" fill="#C41E3A" stroke="#0A1F2E" stroke-width="3"/>
+  
+  <!-- Roof shine effect -->
+  <path d="M35 42L60 25L60 50" fill="#D93A4D" opacity="0.6"/>
+  
+  <!-- Flag pole -->
+  <rect x="57" y="8" width="6" height="22" fill="#0A1F2E" stroke="#0A1F2E" stroke-width="1"/>
+  
+  <!-- Flag -->
+  <rect x="63" y="10" width="22" height="14" fill="#2B9A5A" stroke="#0A1F2E" stroke-width="2"/>
+  
+  <!-- Main entrance door -->
+  <rect x="48" y="72" width="24" height="30" fill="#654321" stroke="#0A1F2E" stroke-width="2" rx="2"/>
+  
+  <!-- Door window -->
+  <circle cx="60" cy="80" r="3.5" fill="#FFD700" stroke="#0A1F2E" stroke-width="1.5"/>
+  
+  <!-- Door handle -->
+  <circle cx="69" cy="87" r="1.5" fill="#FFD700"/>
+  
+  <!-- Windows - Left side -->
+  <rect x="28" y="55" width="14" height="14" fill="#87CEEB" stroke="#0A1F2E" stroke-width="2" rx="1"/>
+  <line x1="35" y1="55" x2="35" y2="69" stroke="#0A1F2E" stroke-width="1.5"/>
+  <line x1="28" y1="62" x2="42" y2="62" stroke="#0A1F2E" stroke-width="1.5"/>
+  
+  <rect x="28" y="73" width="14" height="14" fill="#87CEEB" stroke="#0A1F2E" stroke-width="2" rx="1"/>
+  <line x1="35" y1="73" x2="35" y2="87" stroke="#0A1F2E" stroke-width="1.5"/>
+  <line x1="28" y1="80" x2="42" y2="80" stroke="#0A1F2E" stroke-width="1.5"/>
+  
+  <!-- Windows - Right side -->
+  <rect x="78" y="55" width="14" height="14" fill="#87CEEB" stroke="#0A1F2E" stroke-width="2" rx="1"/>
+  <line x1="85" y1="55" x2="85" y2="69" stroke="#0A1F2E" stroke-width="1.5"/>
+  <line x1="78" y1="62" x2="92" y2="62" stroke="#0A1F2E" stroke-width="1.5"/>
+  
+  <rect x="78" y="73" width="14" height="14" fill="#87CEEB" stroke="#0A1F2E" stroke-width="2" rx="1"/>
+  <line x1="85" y1="73" x2="85" y2="87" stroke="#0A1F2E" stroke-width="1.5"/>
+  <line x1="78" y1="80" x2="92" y2="80" stroke="#0A1F2E" stroke-width="1.5"/>
+  
+  <!-- Foundation -->
+  <rect x="18" y="100" width="84" height="8" fill="#8B6F47" stroke="#0A1F2E" stroke-width="2"/>
+  
+  <!-- Decorative stripe on foundation -->
+  <rect x="18" y="102" width="84" height="2" fill="#FFD700"/>
+</svg>

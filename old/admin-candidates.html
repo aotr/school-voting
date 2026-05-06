@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+  <title>Admin Candidates</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+  <main class="machine-shell">
+    <section class="machine-panel admin-panel">
+      <header class="panel-header admin-header">
+        <div>
+          <p class="eyebrow">School Election Admin</p>
+          <h1>Candidate Management</h1>
+        </div>
+        <div class="status-cluster">
+          <a class="admin-link" href="./index.html">Back To Voting</a>
+        </div>
+      </header>
+
+      <section class="admin-dashboard">
+        <nav class="card-block admin-menu" aria-label="Admin menu">
+          <a class="menu-link" href="./admin.html">Home</a>
+          <a class="menu-link" href="./admin-election.html">Election</a>
+          <a class="menu-link" href="./admin-security.html">Security</a>
+          <a class="menu-link is-active" href="./admin-candidates.html">Candidates</a>
+          <a class="menu-link" href="./admin-results.html">Results</a>
+          <a class="menu-link" href="./admin-backup.html">Backup</a>
+          <button class="menu-link logout-link" id="logout-button" type="button">Logout</button>
+        </nav>
+
+        <section class="card-block candidate-block">
+          <div class="section-head">
+            <div>
+              <h2>Candidates</h2>
+              <p class="support-text">Edit candidates page by page with presets or custom uploads.</p>
+            </div>
+            <button class="reset-button" id="add-candidate-button" type="button">Add Candidate</button>
+          </div>
+          <form id="candidate-form" class="candidate-table"></form>
+          <div class="action-row">
+            <button class="reset-button" id="save-candidates-button" type="button">Save Candidates</button>
+          </div>
+          <div class="message-box" id="backup-message">Save candidate changes here before returning to the voter screen.</div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <script src="./utils/api-client.js"></script>
+  <script src="./storage.js"></script>
+  <script src="./admin-common.js"></script>
+  <script src="./admin-candidates.js"></script>
+</body>
+</html>

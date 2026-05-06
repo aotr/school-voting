@@ -1,0 +1,81 @@
+{
+  "name": "voter-app",
+  "version": "1.0.0",
+  "description": "School Voting System - EVM Machine Interface",
+  "main": "server.js",
+  "homepage": "/",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "jest --runInBand --verbose",
+    "test:e2e": "playwright test",
+    "test:all": "npm run test && npm run test:e2e"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.2.2",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "playwright": "^1.40.0",
+    "@playwright/test": "^1.40.0",
+    "nodemon": "^3.0.2"
+  },
+  "build": {
+    "appId": "com.votingsystem.app",
+    "productName": "Voter App",
+    "directories": {
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "app.js",
+      "app.css",
+      "styles.css",
+      "storage.js",
+      "database/",
+      "assets/",
+      "admin.html",
+      "admin.js",
+      "admin.css",
+      "admin-*.html",
+      "admin-*.js",
+      "admin-common.js",
+      "node_modules/"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "certificateFile": null
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.education"
+    }
+  }
+}
