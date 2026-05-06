@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="py-10">
+    <div class="flex-1 min-h-0 py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
             <!-- Header Section -->
@@ -14,7 +14,7 @@
                 
                 <!-- Add Candidate Form (Sidebar on large screens) -->
                 <div class="lg:col-span-1">
-                    <div class="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden sticky top-24">
+                    <div class="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
                         <div class="border-b border-zinc-200 dark:border-zinc-800 px-6 py-5 bg-zinc-50/50 dark:bg-zinc-900/50">
                             <h3 class="text-base font-semibold leading-6 text-zinc-900 dark:text-zinc-50">Add New Candidate</h3>
                             <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Register a new candidate profile.</p>
@@ -63,9 +63,9 @@
                 </div>
 
                 <!-- Candidates List -->
-                <div class="lg:col-span-2">
-                    <div class="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-                        <div class="overflow-x-auto">
+                <div class="lg:col-span-2 flex flex-col min-h-0">
+                    <div class="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col min-h-0">
+                        <div class="overflow-auto flex-1 max-h-[calc(100vh-220px)]">
                             <table class="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
                                 <thead class="bg-zinc-50/80 dark:bg-zinc-900/80">
                                     <tr>

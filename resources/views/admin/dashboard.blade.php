@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="py-10">
+    <div class="flex-1 min-h-0 py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
             <!-- Header Section -->
@@ -51,12 +51,12 @@
             <!-- Settings Panel -->
             @if($election)
             <div class="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm mt-8 overflow-hidden">
-                <div class="border-b border-zinc-200 dark:border-zinc-800 px-6 py-5 bg-zinc-50/50 dark:bg-zinc-900/50">
+                <div class="border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 bg-zinc-50/50 dark:bg-zinc-900/50">
                     <h3 class="text-lg font-semibold leading-6 text-zinc-900 dark:text-zinc-50">Election Settings</h3>
                     <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Manage the properties of the current election.</p>
                 </div>
                 
-                <div class="px-6 py-6">
+                <div class="px-6 py-4 max-h-[calc(100vh-420px)] overflow-y-auto">
                     <form action="{{ route('admin.election.update', $election) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                         @csrf
                         @method('PUT')

@@ -5,11 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{{ config('app.name', 'School Voting System') }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ asset('css/evm.css') }}">
 </head>
 <body>
-  <main class="machine-shell">
-    <section class="machine-panel voting-panel" id="voting-panel">
+  <div class="bg-gradient-wrapper"></div>
+  <main class="app-container">
+    <section class="glass-panel voting-interface" id="voting-panel">
       <header class="panel-header">
         <div class="header-with-logo">
           @if($election && $election->logo_path)
@@ -74,33 +78,40 @@
       </section>
 
       <footer class="panel-footer">
-        <div class="message-box" id="message-box">
-          {{ $election && $election->is_active ? 'Ready for the next student. Select a candidate to cast the vote.' : 'Voting is currently closed by the admin panel.' }}
+        <div class="message-display" id="message-box">
+          <span class="message-text">
+            {{ $election && $election->is_active ? 'Ready for the next student. Select a candidate to cast the vote.' : 'Voting is currently closed by the admin panel.' }}
+          </span>
         </div>
-        <section class="vvpat-panel" id="vvpat-panel" aria-live="polite">
-          <div class="vvpat-head">
-            <span class="vvpat-label">Voter Slip Box</span>
-            <span class="vvpat-status" id="vvpat-status">Waiting For Vote</span>
+        
+        <section class="vvpat-terminal" id="vvpat-panel" aria-live="polite">
+          <div class="terminal-header">
+            <span class="terminal-label">Verification Terminal</span>
+            <div class="terminal-status">
+              <span class="status-pulse" id="vvpat-status-pulse"></span>
+              <span id="vvpat-status">Standby</span>
+            </div>
           </div>
-          <div class="vvpat-box">
-            <span class="vvpat-indicator" aria-hidden="true"></span>
-            <span class="vvpat-slot" aria-hidden="true"></span>
-            <div class="vvpat-placeholder" id="vvpat-placeholder">Slip box empty</div>
-            <article class="vvpat-slip" id="vvpat-slip" aria-hidden="true">
-              <div class="vvpat-slip-symbol">
+          <div class="terminal-display">
+            <div class="terminal-placeholder" id="vvpat-placeholder">Awaiting secure transmission...</div>
+            <article class="receipt-slip" id="vvpat-slip" aria-hidden="true">
+              <div class="receipt-logo">
                 <img id="vvpat-slip-symbol" src="" alt="">
               </div>
-              <div class="vvpat-slip-copy">
-                <span class="vvpat-slip-title">Printed Vote</span>
-                <strong id="vvpat-slip-name">Ready</strong>
-                <span id="vvpat-slip-symbol-name">Awaiting selection</span>
+              <div class="receipt-content">
+                <span class="receipt-meta">CONFIRMED VOTE</span>
+                <strong id="vvpat-slip-name">--</strong>
+                <span id="vvpat-slip-symbol-name">--</span>
               </div>
             </article>
           </div>
         </section>
-        <button class="reset-button" id="reset-button" type="button">
-          Reset For Next Student
-        </button>
+
+        <div class="action-bar">
+          <button class="btn-reset" id="reset-button" type="button">
+            Next Student
+          </button>
+        </div>
       </footer>
     </section>
   </main>
@@ -123,6 +134,7 @@
     const vvpatSlip = document.getElementById("vvpat-slip");
     const vvpatStatus = document.getElementById("vvpat-status");
     const vvpatPlaceholder = document.getElementById("vvpat-placeholder");
+    const vvpatPulse = document.getElementById("vvpat-status-pulse");
 
     let selectedCandidateId = null;
     let activeAudioContext = null;
@@ -231,17 +243,18 @@
       if (slipSymbolName) slipSymbolName.textContent = candidate.tagline ? `${candidate.tagline} - ${candidate.name}` : `Vote for ${candidate.name}`;
 
       vvpatSlip.style.opacity = "";
-      vvpatPanel.classList.add("is-printing", "has-slip");
+      vvpatPanel.classList.add("is-transmitting", "has-receipt");
       vvpatPlaceholder.style.display = "none";
       vvpatSlip.classList.remove("is-resting");
       vvpatSlip.classList.add("is-animating");
 
-      vvpatStatus.textContent = "Vote Confirmed!";
+      vvpatStatus.textContent = "Verified";
+      if (vvpatPulse) vvpatPulse.classList.add("is-success");
 
       window.setTimeout(() => {
         vvpatSlip.classList.remove("is-animating");
         vvpatSlip.classList.add("is-resting");
-        vvpatStatus.textContent = "Slip Stored";
+        vvpatStatus.textContent = "Encrypted";
       }, 1200);
     }
 
@@ -304,11 +317,12 @@
         voteButton.textContent = "Vote";
       });
 
-      vvpatPanel.classList.remove("is-printing", "has-slip");
+      vvpatPanel.classList.remove("is-transmitting", "has-receipt");
       vvpatSlip.classList.remove("is-animating", "is-resting");
       vvpatSlip.style.opacity = "0";
       vvpatPlaceholder.style.display = "grid";
-      vvpatStatus.textContent = "Waiting For Vote";
+      vvpatStatus.textContent = "Standby";
+      if (vvpatPulse) vvpatPulse.classList.remove("is-success");
 
       setMessage("Ready for the next student. Select a candidate to cast the vote.", "reset");
     }

@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="py-10">
+    <div class="flex-1 min-h-0 py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
             <!-- Header Section -->
@@ -30,7 +30,7 @@
                     </div>
                 </div>
                 
-                <div class="px-6 py-6 sm:p-8">
+                <div class="px-6 py-6 sm:p-8 overflow-y-auto max-h-[calc(100vh-280px)]">
                     <div class="space-y-8">
                         @forelse($candidates as $index => $candidate)
                             @php

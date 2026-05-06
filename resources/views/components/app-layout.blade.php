@@ -13,9 +13,29 @@
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <style>
+        /* Hide scrollbars for a clean single-screen look */
+        body { overflow: hidden !important; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { 
+            background: rgba(0, 0, 0, 0.1); 
+            border-radius: 10px; 
+        }
+        .dark ::-webkit-scrollbar-thumb { 
+            background: rgba(255, 255, 255, 0.1); 
+        }
+        ::-webkit-scrollbar-thumb:hover { 
+            background: rgba(0, 0, 0, 0.2); 
+        }
+        .dark ::-webkit-scrollbar-thumb:hover { 
+            background: rgba(255, 255, 255, 0.2); 
+        }
+    </style>
 </head>
-<body class="h-full font-sans antialiased text-zinc-900 dark:text-zinc-100">
-    <div class="min-h-screen">
+<body class="h-full font-sans antialiased text-zinc-900 dark:text-zinc-100 overflow-hidden">
+    <div class="flex flex-col h-screen">
         <!-- Navigation -->
         @auth
         <nav class="sticky top-0 z-50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800">
@@ -54,7 +74,7 @@
         @endauth
 
         <!-- Page Content -->
-        <main class="pb-12">
+        <main class="flex-1 overflow-y-auto pb-12">
             @if (session('success'))
                 <div class="max-w-7xl mx-auto mt-6 px-4 sm:px-6 lg:px-8">
                     <div class="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 p-4 rounded-lg flex items-start gap-3">
